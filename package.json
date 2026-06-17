@@ -1,0 +1,27 @@
+{
+  "name": "apply-assistant",
+  "version": "1.0.0",
+  "description": "Chrome extension that autofills job-application forms (Workday-first) from a saved profile, with per-question AI drafting.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "node build.mjs",
+    "build:watch": "node build.mjs --watch",
+    "lint": "eslint src test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@types/chrome": "^0.0.268",
+    "esbuild": "^0.21.5",
+    "eslint": "^9.5.0",
+    "jsdom": "^24.1.0",
+    "vitest": "^1.6.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.69.0",
+    "mammoth": "^1.8.0",
+    "pdfjs-dist": "^4.4.168"
+  }
+}

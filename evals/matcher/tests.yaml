@@ -1,0 +1,47 @@
+# =============================================================================
+# Stage-2 matcher test cases — SCAFFOLD ONLY. Fill these in by hand.
+# Do NOT trust auto-generated data here; the whole point is that YOU verify the
+# expected mappings against real page wording.
+#
+# Each test supplies three vars:
+#   page_questions : JSON array of {id, label}            (the form's questions)
+#   answer_bank    : JSON array of {id, label, answer}    (the saved profile)
+#   expected       : mapping of question id -> bank entry id, or null for "no match"
+#
+# Replace every TODO_FILL_IN. The first case below is live (and will FAIL until
+# you fill it in — that's expected). The commented skeletons show the three
+# shapes the spec calls out; uncomment and adapt them.
+# =============================================================================
+
+- description: TODO_FILL_IN — differently-worded work-auth question → work-auth entry
+  vars:
+    page_questions: '[{"id":"q1","label":"TODO_FILL_IN e.g. Do you have the right to work in the US?"}]'
+    answer_bank: '[{"id":"b1","label":"TODO_FILL_IN e.g. Work authorization","answer":"TODO_FILL_IN e.g. Yes"}]'
+    expected:
+      q1: TODO_FILL_IN # e.g. b1
+
+# --- Skeleton A: a differently-worded question that SHOULD map ----------------
+# - description: sponsorship question maps to the sponsorship entry
+#   vars:
+#     page_questions: '[{"id":"q1","label":"Will you now or in the future require visa sponsorship?"}]'
+#     answer_bank: '[{"id":"b1","label":"Require sponsorship?","answer":"No"}]'
+#     expected:
+#       q1: b1
+
+# --- Skeleton B: an unrelated question that MUST map to none ------------------
+# (guards against confident-but-wrong matches)
+# - description: unrelated question maps to none
+#   vars:
+#     page_questions: '[{"id":"q1","label":"What is your favorite programming language?"}]'
+#     answer_bank: '[{"id":"b1","label":"Require sponsorship?","answer":"No"},{"id":"b2","label":"Work authorization","answer":"Yes"}]'
+#     expected:
+#       q1: null
+
+# --- Skeleton C: no matches at all -------------------------------------------
+# (guards the Stage-1 / Stage-2 boundary)
+# - description: nothing in the bank fits
+#   vars:
+#     page_questions: '[{"id":"q1","label":"Describe a time you led a team."}]'
+#     answer_bank: '[{"id":"b1","label":"Work authorization","answer":"Yes"}]'
+#     expected:
+#       q1: null

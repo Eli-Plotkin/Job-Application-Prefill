@@ -1,0 +1,25 @@
+# Apply Assistant — Stage-2 semantic matcher eval (spec §13.2).
+# Run: npm run eval:matcher   (needs ANTHROPIC_API_KEY in your environment)
+description: Apply Assistant semantic matcher
+
+# The prompt is imported from the extension source so it can never drift.
+prompts:
+  - file://prompt.js
+
+providers:
+  # Cheap model intended for matching. Add a second provider to compare side by side.
+  - id: anthropic:messages:claude-haiku-4-5
+  # - id: anthropic:messages:claude-sonnet-4-6
+
+# Assertions applied to every test case.
+defaultTest:
+  assert:
+    # Structural: Stage 2 must return JSON (spec §13.2).
+    - type: is-json
+    # Semantic: predicted mapping must equal the expected mapping for the case.
+    - type: javascript
+      value: file://matcher-assert.js
+    # TODO_FILL_IN: add a set-wide accuracy metric/threshold once real cases exist,
+    # e.g. derive a per-suite pass rate from the javascript assert scores.
+
+tests: file://tests.yaml

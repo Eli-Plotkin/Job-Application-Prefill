@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Apply Assistant</title>
+    <link rel="stylesheet" href="dashboard.css" />
+  </head>
+  <body>
+    <main class="wrap">
+      <header class="masthead">
+        <div class="brandmark">
+          <span class="glyph">A</span>
+          <span class="kicker">Apply&nbsp;Assistant</span>
+        </div>
+        <h1>Your application desk.</h1>
+        <p class="tagline">
+          Fill job applications faster from one saved profile. Everything stays on this device — nothing
+          leaves except the answers you ask AI to write.
+        </p>
+      </header>
+
+      <section class="card">
+        <div class="card-head"><span class="num">01</span><h2>Resume</h2></div>
+        <p class="hint">Uploaded once and parsed to plain text for use as AI context.</p>
+        <div id="resume-status" class="resume-status">No resume uploaded.</div>
+        <div class="row">
+          <label class="file-button">
+            <input type="file" id="resume-file" accept=".pdf,.docx,.txt" hidden />
+            <span id="resume-button-label">Upload resume</span>
+          </label>
+          <button id="resume-clear" class="btn ghost" type="button">Remove</button>
+        </div>
+        <details class="resume-preview" id="resume-preview-wrap" hidden>
+          <summary>Preview extracted text</summary>
+          <pre id="resume-preview"></pre>
+        </details>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><span class="num">02</span><h2>About me</h2></div>
+        <p class="hint">Your voice and positioning, in your own words. Passed to every "Write with AI" call.</p>
+        <textarea id="blurb" rows="6" placeholder="e.g. I'm a systems engineer focused on hard real-time problems…"></textarea>
+        <div class="row end"><span class="saved" id="blurb-saved"></span></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <span class="num">03</span><h2>Answer bank</h2>
+          <span class="spacer"></span>
+          <div class="row">
+            <button id="answer-add" class="btn" type="button">Add answer</button>
+            <button id="answer-seed" class="btn ghost" type="button">Starter examples</button>
+          </div>
+        </div>
+        <p class="hint">Label → answer pairs. Standardized ones (name, email, phone, profile URLs) fill with no API call; the rest are matched by AI.</p>
+        <div class="answer-head"><span>Question</span><span>Saved answer</span><span></span></div>
+        <div id="answer-list" class="answer-list"></div>
+        <p id="answer-empty" class="empty">No saved answers yet. Add some, or load the starter examples.</p>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><span class="num">04</span><h2>API &amp; models</h2></div>
+        <p class="hint">Your own Anthropic API key, stored locally. Never hardcoded, never sent anywhere except the Anthropic API.</p>
+        <label class="field">
+          <span>Anthropic API key</span>
+          <input type="password" id="api-key" placeholder="sk-ant-…" autocomplete="off" />
+        </label>
+        <div class="grid2">
+          <label class="field">
+            <span>Match model · cheap, for semantic matching</span>
+            <input type="text" id="match-model" />
+          </label>
+          <label class="field">
+            <span>Draft model · better, for Write with AI</span>
+            <input type="text" id="draft-model" />
+          </label>
+        </div>
+        <div class="grid2">
+          <label class="field">
+            <span>Match confidence threshold · 0–1</span>
+            <input type="number" id="threshold" min="0" max="1" step="0.05" />
+          </label>
+          <label class="field checkbox">
+            <input type="checkbox" id="highlight" />
+            <span>Highlight filled fields for scan-review</span>
+          </label>
+        </div>
+        <div class="row end"><span class="saved" id="settings-saved"></span></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><span class="num">05</span><h2>Backup</h2></div>
+        <p class="hint">Export all data (including the API key) as JSON to back up or move to another device. Import restores from that file.</p>
+        <div class="row">
+          <button id="export" class="btn" type="button">Export JSON</button>
+          <label class="file-button ghost">
+            <input type="file" id="import-file" accept="application/json,.json" hidden />
+            <span>Import JSON</span>
+          </label>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast" hidden></div>
+
+    <!-- mammoth prebuilt browser bundle (exposes window.mammoth) for DOCX parsing -->
+    <script src="vendor/mammoth.browser.min.js"></script>
+    <script src="dashboard.js"></script>
+  </body>
+</html>

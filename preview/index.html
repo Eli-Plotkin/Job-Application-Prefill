@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Apply Assistant — preview</title>
+    <!-- real dashboard stylesheet; its @font-face fonts/ paths resolve under /src/dashboard/ -->
+    <link rel="stylesheet" href="/src/dashboard/dashboard.css" />
+  </head>
+  <body>
+    <main class="wrap">
+      <header class="masthead">
+        <div class="brandmark">
+          <span class="glyph">A</span>
+          <span class="kicker">Apply&nbsp;Assistant</span>
+        </div>
+        <h1>Your application desk.</h1>
+        <p class="tagline">
+          Fill job applications faster from one saved profile. Everything stays on this device — nothing
+          leaves except the answers you ask AI to write.
+        </p>
+      </header>
+
+      <section class="card">
+        <div class="card-head"><span class="num">01</span><h2>Resume</h2></div>
+        <p class="hint">Uploaded once and parsed to plain text for use as AI context.</p>
+        <div class="resume-status has-file">eli-plotkin-resume.pdf — used as AI context (4,812 chars)</div>
+        <div class="row">
+          <label class="file-button"><span>Replace resume</span></label>
+          <button class="btn ghost" type="button">Remove</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><span class="num">02</span><h2>About me</h2></div>
+        <p class="hint">Your voice and positioning, in your own words. Passed to every "Write with AI" call.</p>
+        <textarea rows="4">I'm a systems engineer who loves hard real-time and embedded problems — most recently a 1 kHz robotics controller in C++. I care about correctness, latency, and tools that get out of the way.</textarea>
+        <div class="row end"><span class="saved">Saved</span></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <span class="num">03</span><h2>Answer bank</h2>
+          <span class="spacer"></span>
+          <div class="row">
+            <button class="btn" type="button">Add answer</button>
+            <button class="btn ghost" type="button">Starter examples</button>
+          </div>
+        </div>
+        <p class="hint">Label → answer pairs. Standardized ones fill with no API call; the rest are matched by AI.</p>
+        <div class="answer-head"><span>Question</span><span>Saved answer</span><span></span></div>
+        <div class="answer-list">
+          <div class="answer-row"><input value="Email" /><input value="eli@umich.edu" /><button class="btn danger del">Delete</button></div>
+          <div class="answer-row"><input value="Authorized to work in the US?" /><input value="Yes" /><button class="btn danger del">Delete</button></div>
+          <div class="answer-row"><input value="Require sponsorship?" /><input value="No" /><button class="btn danger del">Delete</button></div>
+          <div class="answer-row"><input value="Willing to relocate?" /><input value="Yes — SF, NYC, Seattle" /><button class="btn danger del">Delete</button></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><span class="num">04</span><h2>API &amp; models</h2></div>
+        <p class="hint">Your own Anthropic API key, stored locally. Never hardcoded, never sent anywhere except the Anthropic API.</p>
+        <label class="field"><span>Anthropic API key</span><input type="password" value="sk-ant-xxxxxxxxxxxxxxxx" /></label>
+        <div class="grid2">
+          <label class="field"><span>Match model · cheap, for semantic matching</span><input type="text" value="claude-haiku-4-5" /></label>
+          <label class="field"><span>Draft model · better, for Write with AI</span><input type="text" value="claude-sonnet-4-6" /></label>
+        </div>
+        <div class="grid2">
+          <label class="field"><span>Match confidence threshold · 0–1</span><input type="number" value="0.6" /></label>
+          <label class="field checkbox"><input type="checkbox" checked /><span>Highlight filled fields for scan-review</span></label>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><span class="num">05</span><h2>Backup</h2></div>
+        <p class="hint">Export all data (including the API key) as JSON to back up or move to another device.</p>
+        <div class="row">
+          <button class="btn" type="button">Export JSON</button>
+          <label class="file-button ghost"><span>Import JSON</span></label>
+        </div>
+      </section>
+    </main>
+
+    <!-- Render the REAL overlay component with the REAL fonts -->
+    <script>
+      window.chrome = { runtime: { getURL: (p) => "/src/dashboard/" + p } };
+    </script>
+    <script type="module">
+      import { Overlay } from "/src/content/overlay.js";
+      const results = [
+        { field: { id: "f1", label: "Email", tag: "input", type: "email" }, entry: { id: "b1", label: "Email", answer: "eli@umich.edu" }, status: "matched" },
+        { field: { id: "f2", label: "Are you legally authorized to work in the United States?", tag: "input", type: "text" }, entry: { id: "b2", label: "Work authorization", answer: "Yes" }, status: "matched" },
+        { field: { id: "f4", label: "Country of residence", tag: "button", type: "combobox" }, entry: { id: "b4", label: "Country", answer: "United States" }, status: "matched" },
+        { field: { id: "f3", label: "Why do you want to work here?", tag: "textarea", type: "textarea" }, entry: null, status: "unmatched" },
+      ];
+      const o = new Overlay({});
+      o.mount(document.body);
+      o.render(results);
+    </script>
+  </body>
+</html>

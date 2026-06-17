@@ -1,0 +1,16 @@
+{
+  "name": "apply-assistant-evals",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "promptfoo evals for the Apply Assistant semantic matcher and Write-with-AI drafter.",
+  "scripts": {
+    "eval": "npm run eval:matcher && npm run eval:drafter",
+    "eval:matcher": "promptfoo eval -c matcher/promptfooconfig.yaml",
+    "eval:drafter": "promptfoo eval -c drafter/promptfooconfig.yaml",
+    "view": "promptfoo view"
+  },
+  "devDependencies": {
+    "promptfoo": "^0.118.0"
+  }
+}

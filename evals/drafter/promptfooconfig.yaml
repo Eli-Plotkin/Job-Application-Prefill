@@ -1,0 +1,33 @@
+# Apply Assistant — Write-with-AI drafter eval (spec §13.3).
+# Run: npm run eval:drafter   (needs ANTHROPIC_API_KEY in your environment)
+description: Apply Assistant drafter
+
+prompts:
+  - file://prompt.js
+
+providers:
+  # Better model intended for drafting.
+  - id: anthropic:messages:claude-sonnet-4-6
+
+defaultTest:
+  assert:
+    # Deterministic: no placeholder leakage from scaffold cases.
+    - type: not-contains
+      value: TODO_FILL_IN
+    # Deterministic: keep drafts concise. TODO_FILL_IN: tune the ceiling.
+    - type: javascript
+      value: "output.length <= 1200"
+    # Model-graded qualities. TODO_FILL_IN: refine the rubric wording per case.
+    - type: llm-rubric
+      value: "The answer is written in the first person (uses 'I', not third person)."
+    - type: llm-rubric
+      value: "The answer directly addresses the question that was asked."
+    # HIGHEST-VALUE CHECK (spec §13.3): no fabrication. Keep this; tune wording.
+    - type: llm-rubric
+      value: >
+        The answer does not state any specific fact (employer, job title, project,
+        date, metric, degree, or skill) that is not supported by the provided
+        resume text or about-me blurb. General or aspirational statements are fine;
+        invented concrete facts are a failure.
+
+tests: file://tests.yaml
