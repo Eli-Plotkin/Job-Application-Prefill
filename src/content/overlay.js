@@ -25,18 +25,19 @@ function fontFaceCss() {
 const STYLE = `
 :host {
   all: initial;
-  --paper: #fcfbf8;
-  --ink: #211e1a;
-  --muted: #7a7264;
-  --line: #e2dccd;
-  --line-soft: #efeae0;
-  --accent: #b06a12;
-  --accent-ink: #fbf6ec;
-  --accent-soft: #f4e6cd;
-  --ok: #2f6a4a;
-  --ok-soft: #e0ebe1;
-  --no: #9c3f2a;
-  --no-soft: #f0ded7;
+  --paper: #ffffff;
+  --ink: #111111;
+  --muted: #888888;
+  --line: #e2e2e6;
+  --line-soft: #efefef;
+  --accent: #71717a;
+  --accent-ink: #ffffff;
+  --accent-soft: #f4f4f5;
+  --silver: #c4c4cc;
+  --ok: #166534;
+  --ok-soft: #dcfce7;
+  --no: #991b1b;
+  --no-soft: #fee2e2;
   --ui: "AA Hanken", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --serif: "AA Spectral", Georgia, serif;
   --mono: "AA Mono", ui-monospace, Menlo, monospace;
@@ -47,8 +48,8 @@ const STYLE = `
   position: fixed; top: 18px; right: 18px; width: 350px; max-height: 84vh;
   background: var(--paper); color: var(--ink);
   font-family: var(--ui); font-size: 14px; line-height: 1.45;
-  border: 1px solid var(--line); border-radius: 16px;
-  box-shadow: 0 24px 60px -22px rgba(33,30,26,0.5), 0 2px 8px -4px rgba(33,30,26,0.25);
+  border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: inset 0 1px 0 var(--silver), 0 4px 16px -8px rgba(0,0,0,0.12), 0 24px 60px -22px rgba(0,0,0,0.18);
   display: flex; flex-direction: column; overflow: hidden;
   z-index: 2147483647;
   animation: aa-in .34s cubic-bezier(.22,1,.36,1) both;
@@ -56,12 +57,13 @@ const STYLE = `
 @keyframes aa-in { from { opacity: 0; transform: translateY(-8px) scale(.98); } to { opacity: 1; transform: none; } }
 
 .header { padding: 14px 16px 13px; border-bottom: 1px solid var(--line-soft); background:
-  linear-gradient(180deg, rgba(176,106,18,0.05), transparent); }
+  linear-gradient(180deg, var(--line-soft), transparent); }
 .brand { display: flex; align-items: center; gap: 9px; }
 .glyph {
   width: 26px; height: 26px; border-radius: 7px; flex: none;
-  background: var(--ink); color: var(--accent);
+  background: var(--ink); color: #ffffff;
   display: grid; place-items: center; font-family: var(--serif); font-size: 16px; line-height: 1;
+  box-shadow: 0 0 0 1px var(--silver);
 }
 .brand .name { font-weight: 700; font-size: 14px; letter-spacing: -0.01em; }
 .brand .x {
@@ -81,7 +83,7 @@ button.btn:hover { transform: translateY(-1px); box-shadow: 0 8px 16px -10px rgb
 button.btn:active { transform: none; }
 button.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
 button.btn.ghost:hover { border-color: var(--ink); box-shadow: none; }
-button.btn.ai { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.btn.ai { background: var(--ink); border-color: var(--ink); color: #fff; box-shadow: 0 0 0 1px var(--silver) inset; }
 button.btn.small { padding: 6px 11px; font-size: 12px; border-radius: 8px; }
 button.btn:disabled { opacity: .55; cursor: default; transform: none; box-shadow: none; }
 
@@ -112,7 +114,7 @@ button.btn:disabled { opacity: .55; cursor: default; transform: none; box-shadow
   width: 100%; min-height: 52px; font: inherit; font-size: 12.5px; padding: 8px 9px;
   border-radius: 8px; border: 1px solid var(--line); resize: vertical; color: var(--ink); background: #fff;
 }
-.guidance textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.guidance textarea:focus { outline: none; border-color: var(--silver); box-shadow: 0 0 0 3px var(--accent-soft); }
 
 .empty { padding: 22px 16px; font-size: 13px; color: var(--muted); text-align: center; font-style: italic; }
 .error { color: var(--no); background: var(--no-soft); font-size: 12px; padding: 10px 14px; line-height: 1.4; }

@@ -1,6 +1,6 @@
 /* ============================================================================
    Apply Assistant — dashboard
-   "Drafting table": warm paper sheets on a desk, ink type, amber reserved for AI.
+   Black on white, silver lining. Crisp contrast over warm paper.
    Display = Spectral · UI = Hanken Grotesk · data = IBM Plex Mono.
    ========================================================================== */
 
@@ -34,28 +34,32 @@
 }
 
 :root {
-  --desk: #e8e3d8;
-  --desk-2: #e2dccf;
-  --paper: #fcfbf8;
-  --ink: #211e1a;
-  --ink-soft: #4a453d;
-  --muted: #7a7264;
-  --line: #ddd6c8;
-  --line-soft: #ece7dc;
+  --desk: #f0f0f2;
+  --desk-2: #e8e8ec;
+  --paper: #ffffff;
+  --ink: #111111;
+  --ink-soft: #444444;
+  --muted: #888888;
+  --line: #e2e2e6;
+  --line-soft: #efefef;
 
-  --accent: #b06a12;       /* ochre/amber — reserved for AI + focus + marks */
-  --accent-ink: #fbf6ec;
-  --accent-soft: #f4e6cd;
-  --accent-line: #e4c590;
+  --accent: #71717a;        /* silver-zinc — focus, marks, secondary actions */
+  --accent-ink: #ffffff;
+  --accent-soft: #f4f4f5;
+  --accent-line: #d4d4d8;
 
-  --ok: #2f6a4a;
-  --ok-soft: #dfeae0;
-  --no: #9c3f2a;
-  --no-soft: #efddd6;
+  --silver: #c4c4cc;        /* the silver lining */
+  --silver-soft: #f8f8fa;
 
-  --radius: 14px;
-  --radius-sm: 9px;
-  --shadow-sheet: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 10px 26px -16px rgba(33, 30, 26, 0.4);
+  --ok: #166534;
+  --ok-soft: #dcfce7;
+  --no: #991b1b;
+  --no-soft: #fee2e2;
+
+  --radius: 12px;
+  --radius-sm: 8px;
+  /* silver lining: bright top edge inset + clean elevation */
+  --shadow-sheet: inset 0 1px 0 var(--silver), 0 1px 3px rgba(0, 0, 0, 0.06), 0 8px 24px -12px rgba(0, 0, 0, 0.1);
   --serif: "Spectral", Georgia, serif;
   --ui: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
@@ -72,9 +76,7 @@ body {
   font-size: 14px;
   line-height: 1.5;
   background-color: var(--desk);
-  background-image:
-    radial-gradient(1200px 600px at 80% -10%, rgba(176, 106, 18, 0.06), transparent 60%),
-    radial-gradient(900px 500px at -10% 0%, rgba(47, 106, 74, 0.05), transparent 55%);
+  background-image: radial-gradient(1400px 700px at 60% -20%, rgba(180, 180, 200, 0.12), transparent 55%);
   background-attachment: fixed;
   min-height: 100vh;
 }
@@ -111,13 +113,13 @@ body::before {
   height: 34px;
   border-radius: 9px;
   background: var(--ink);
-  color: var(--accent);
+  color: #ffffff;
   display: grid;
   place-items: center;
   font-family: var(--serif);
   font-size: 22px;
   line-height: 1;
-  box-shadow: 0 6px 16px -8px rgba(33, 30, 26, 0.7);
+  box-shadow: 0 0 0 1.5px var(--silver), 0 4px 14px -6px rgba(0, 0, 0, 0.4);
 }
 .brandmark .kicker {
   font-family: var(--mono);
@@ -125,7 +127,7 @@ body::before {
   font-weight: 500;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--muted);
 }
 .masthead h1 {
   margin: 0;
@@ -178,7 +180,7 @@ body::before {
   font-family: var(--serif);
   font-size: 26px;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--silver);
   line-height: 1;
   font-feature-settings: "lnum" 1;
 }
@@ -241,7 +243,7 @@ body::before {
 .btn.danger:hover { border-color: var(--no); box-shadow: none; }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--silver);
   outline-offset: 2px;
   border-radius: 6px;
 }
@@ -268,7 +270,7 @@ body::before {
 .resume-status.has-file {
   border-color: var(--accent-line);
   background: var(--accent-soft);
-  color: #6f4a13;
+  color: var(--ink-soft);
 }
 .resume-status.has-file::before { background: var(--accent); }
 
@@ -314,8 +316,8 @@ input[type="number"] {
 textarea:focus,
 input:focus {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  border-color: var(--silver);
+  box-shadow: 0 0 0 3px var(--silver-soft);
 }
 textarea::placeholder,
 input::placeholder { color: #aaa291; }
@@ -333,7 +335,7 @@ textarea { resize: vertical; min-height: 120px; line-height: 1.55; }
 }
 .field.checkbox { display: flex; align-items: center; gap: 10px; }
 .field.checkbox > span { margin: 0; font-weight: 500; font-size: 13.5px; color: var(--ink); }
-.field.checkbox input { width: auto; accent-color: var(--accent); width: 17px; height: 17px; }
+.field.checkbox input { width: auto; accent-color: var(--ink); width: 17px; height: 17px; }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
 /* ---- Answer bank (ledger) ---- */
