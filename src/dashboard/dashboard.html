@@ -90,7 +90,16 @@
       </section>
 
       <section class="card">
-        <div class="card-head"><span class="num">05</span><h2>Backup</h2></div>
+        <div class="card-head"><span class="num">05</span><h2>API spend</h2></div>
+        <p class="hint">Estimated cost of all LLM calls made through this extension, calculated from Anthropic's published token prices.</p>
+        <div class="grid2">
+          <div class="field"><span>This week</span><div id="spend-weekly" class="spend-val">—</div></div>
+          <div class="field"><span>Lifetime</span><div id="spend-lifetime" class="spend-val">—</div></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><span class="num">06</span><h2>Backup</h2></div>
         <p class="hint">Export all data (including the API key) as JSON to back up or move to another device. Import restores from that file.</p>
         <div class="row">
           <button id="export" class="btn" type="button">Export JSON</button>

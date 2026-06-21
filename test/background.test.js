@@ -30,7 +30,7 @@ function setupChrome(storageGet) {
     },
     action: { onClicked: { addListener: (fn) => (actionListener = fn) } },
     scripting: { executeScript: vi.fn() },
-    storage: { local: { get: getMock } },
+    storage: { local: { get: getMock, set: vi.fn().mockResolvedValue(undefined) } },
   };
 }
 
@@ -54,6 +54,7 @@ describe("background AA_COMPLETE broker", () => {
         { type: "text", text: "hello" },
         { type: "text", text: "world" },
       ],
+      usage: { input_tokens: 10, output_tokens: 5 },
     });
 
     const sendResponse = vi.fn();
@@ -76,7 +77,7 @@ describe("background AA_COMPLETE broker", () => {
 
   it("falls back to the configured match model and a default max_tokens", async () => {
     await loadBackground(async () => ({ settings: { apiKey: "sk", matchModel: "fallback-model" } }));
-    create.mockResolvedValue({ content: [{ type: "text", text: "x" }] });
+    create.mockResolvedValue({ content: [{ type: "text", text: "x" }], usage: { input_tokens: 1, output_tokens: 1 } });
 
     messageListener({ type: "AA_COMPLETE", system: "s", user: "u" }, {}, vi.fn());
     await flush();

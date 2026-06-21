@@ -384,6 +384,15 @@ textarea { resize: vertical; min-height: 120px; line-height: 1.55; }
   min-height: 16px;
 }
 
+/* ---- Spend display ---- */
+.spend-val {
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-top: 2px;
+}
+
 /* ---- Toast ---- */
 .toast {
   position: fixed;

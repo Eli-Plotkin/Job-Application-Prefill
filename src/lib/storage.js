@@ -49,6 +49,35 @@ export async function setAnswerBank(entries) {
   await chrome.storage.local.set({ [STORAGE_KEYS.answerBank]: entries || [] });
 }
 
+// ---- Spend tracking --------------------------------------------------------
+
+function weekStartIso(date) {
+  const d = new Date(date);
+  d.setDate(d.getDate() - d.getDay()); // rewind to Sunday
+  return d.toISOString().slice(0, 10);
+}
+
+export async function getSpendLog() {
+  const got = await chrome.storage.local.get(STORAGE_KEYS.spendLog);
+  return got[STORAGE_KEYS.spendLog] || {
+    lifetimeUsd: 0,
+    weeklyUsd: 0,
+    weekStart: weekStartIso(new Date()),
+  };
+}
+
+export async function recordSpend(usd) {
+  const log = await getSpendLog();
+  const thisWeek = weekStartIso(new Date());
+  await chrome.storage.local.set({
+    [STORAGE_KEYS.spendLog]: {
+      lifetimeUsd: log.lifetimeUsd + usd,
+      weeklyUsd: log.weekStart === thisWeek ? log.weeklyUsd + usd : usd,
+      weekStart: thisWeek,
+    },
+  });
+}
+
 // Stable-ish unique id for answer-bank rows and similar.
 export function newId() {
   return (

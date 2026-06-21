@@ -21,6 +21,7 @@ export const STORAGE_KEYS = Object.freeze({
   blurb: "blurb",
   answerBank: "answerBank",
   settings: "settings",
+  spendLog: "spendLog",
 });
 
 // Schema version for export/import payloads.

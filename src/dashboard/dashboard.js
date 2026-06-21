@@ -9,6 +9,7 @@ import {
   setBlurb,
   getAnswerBank,
   setAnswerBank,
+  getSpendLog,
   exportAll,
   importAll,
   newId,
@@ -191,6 +192,18 @@ const saveSettings = debounce(async () => {
   flashSaved("settings-saved");
 }, 400);
 
+// ---- Spend -----------------------------------------------------------------
+function formatUsd(usd) {
+  if (usd < 0.01) return usd === 0 ? "$0.00" : "< $0.01";
+  return "$" + usd.toFixed(usd >= 1 ? 2 : 4);
+}
+
+async function renderSpend() {
+  const log = await getSpendLog();
+  $("spend-weekly").textContent = formatUsd(log.weeklyUsd);
+  $("spend-lifetime").textContent = formatUsd(log.lifetimeUsd);
+}
+
 // ---- Backup ----------------------------------------------------------------
 async function onExport() {
   const payload = await exportAll();
@@ -222,7 +235,7 @@ async function onImport(e) {
 // ---- Init ------------------------------------------------------------------
 async function reloadAll() {
   answerBank = await getAnswerBank();
-  await Promise.all([renderResume(), renderBlurb(), renderSettings()]);
+  await Promise.all([renderResume(), renderBlurb(), renderSettings(), renderSpend()]);
   renderAnswerBank();
 }
 
