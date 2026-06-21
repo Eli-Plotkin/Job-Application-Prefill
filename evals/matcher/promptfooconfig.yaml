@@ -1,15 +1,14 @@
 # Apply Assistant — Stage-2 semantic matcher eval.
 # Runs v1 (batched) and v2 (per-question) side by side for direct comparison.
 # Run: npm run eval:matcher   (needs ANTHROPIC_API_KEY in your environment)
-description: Apply Assistant semantic matcher — v1 (batched) vs v2 (per-question)
+description: Apply Assistant semantic matcher — single batched Stage-2 call
 
 prompts:
   - label: "matcher"
-    raw: "unused"  # both custom providers build their own prompts from src/lib/matcher.js
+    raw: "unused"  # provider builds its own prompts from src/lib/matcher.js
 
 providers:
-  - id: file://provider-v1.js  # v1 — single batched call
-  - id: file://provider-v2.js  # v2 — one parallel call per question
+  - id: file://provider-v1.js  # single batched call
 
 defaultTest:
   assert:

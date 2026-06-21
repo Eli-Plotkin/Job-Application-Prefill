@@ -28,8 +28,11 @@ Built to the spec in `Apply_Assistant_Spec.md`.
   bank entries, with a confidence threshold so weak guesses are left blank.
   For dropdown fields the model also sees the available option texts and must
   confirm the stored answer maps to a real option before committing — a mismatch
-  returns no fill rather than a wrong one. Two Stage 2 strategies are under eval:
-  a single batched call (v1) vs. one parallel call per field (v2).
+  returns no fill rather than a wrong one. A v2 strategy was evaluated that
+  fired one parallel LLM call per unmatched field instead of a single batched
+  call. It required a concurrency cap and inter-call delays to avoid rate limits,
+  did not improve matching accuracy, and consumed significantly more tokens —
+  so the single batched call was kept.
 
 ## Build & load
 
