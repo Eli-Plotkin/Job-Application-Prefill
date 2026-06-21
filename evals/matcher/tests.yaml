@@ -117,8 +117,16 @@
     page_questions: '[{"id":"q1","label":"What type of employment are you seeking?","options":["Full-time","Part-time","Contract","Internship"]},{"id":"q2","label":"What is your highest level of education?","options":["Less than high school","High school diploma or GED","Associates degree","Bachelors degree"]},{"id":"q3","label":"Have you ever been terminated from a position for cause?","options":["Yes","No","Prefer not to disclose"]}]'
     answer_bank: '[{"id":"b1","label":"Employment type","answer":"Full-time"},{"id":"b2","label":"Education level","answer":"Ph.D. in Computer Science from MIT"},{"id":"b3","label":"Work authorization","answer":"Yes, I am authorized to work in the United States"},{"id":"b4","label":"Require sponsorship","answer":"No, I do not require visa sponsorship"},{"id":"b5","label":"Years of experience","answer":"8"}]'
     expected:
-      q1: b1    # question "employment type" matches bank label; "Full-time" option matches bank answer exactly
-      q2: null  # question matches "Education level" but Ph.D. is not among the four options (all sub-bachelor)
-      q3: null  # "Yes" option superficially matches bank answer but question topic (termination) ≠ bank concept (work authorization)
+      q1: b1    # MATCH:    question "employment type" → bank label "Employment type" (condition 1 ✓);
+                #           bank answer "Full-time" → option "Full-time" exact match (condition 2 ✓)
+      q2: null  # NO MATCH: question → bank label "Education level" (condition 1 ✓);
+                #           bank answer "Ph.D. in Computer Science from MIT" is above all options
+                #           (max available is "Bachelors degree") — selecting it would misrepresent
+                #           the user, so condition 2 fails → null
+      q3: null  # NO MATCH: option "Yes" is textually close to bank answer "Yes, I am authorized…"
+                #           but question topic (termination history) ≠ bank concept (work authorization)
+                #           — condition 1 fails before option evaluation even begins → null
     expected_options:
-      q1: "Full-time"  # must select this exact option text verbatim
+      q1: "Full-time"   # bank answer "Full-time" → verbatim option match
+      # q2: (omitted)   # no option accurately represents Ph.D. — field should be left blank
+      # q3: (omitted)   # topic mismatch blocks the match before option evaluation

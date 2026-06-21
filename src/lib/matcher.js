@@ -108,10 +108,10 @@ For each question, decide which single answer-bank entry best answers it, or non
 
 Only map a question when you are confident the entry genuinely answers it. When in doubt, return null — a wrong fill is worse than a blank field. Never map two unrelated concepts together (e.g. do not map a salary question to a relocation entry).
 
-DROPDOWN QUESTIONS: Some questions include [options: ...] listing the available choices. For these, a match requires BOTH conditions to be satisfied:
+DROPDOWN QUESTIONS: Some questions include [options: ...] listing the available choices. A match requires BOTH conditions:
   1. The question is semantically similar to the bank entry's label/answer concept.
-  2. The user's stored answer is semantically similar to one of the listed options.
-When both conditions are met, set "selected_option" to the exact option text (copied verbatim from the list) that best matches the stored answer. If the stored answer does not map to any available option, return bank_entry_id: null — do not guess an unrelated option.
+  2. One of the available options accurately represents the user's stored answer — not merely the closest available choice, but a genuine fit. Ask yourself: "Would selecting this option misrepresent the user?" If yes, return bank_entry_id: null even if condition 1 was met. Choosing a least-wrong option is worse than leaving the field blank.
+When both conditions are met, set "selected_option" to the exact verbatim option text.
 
 For non-dropdown questions, omit "selected_option" or set it to null.
 
@@ -198,8 +198,8 @@ Only return a match when you are confident the entry genuinely answers this spec
 
 DROPDOWN QUESTIONS: If the question includes [options: ...] listing the available choices, a match requires BOTH conditions:
   1. The question is semantically similar to the bank entry's label/answer concept.
-  2. The user's stored answer is semantically similar to one of the listed options.
-When both conditions are met, set "selected_option" to the exact option text (copied verbatim from the list) that best matches the stored answer. If the stored answer does not map to any available option, return bank_entry_id: null.
+  2. One of the available options accurately represents the user's stored answer — not merely the closest available choice, but a genuine fit. Ask yourself: "Would selecting this option misrepresent the user?" If yes, return bank_entry_id: null even if condition 1 was met. Choosing a least-wrong option is worse than leaving the field blank.
+When both conditions are met, set "selected_option" to the exact verbatim option text.
 
 For non-dropdown questions, omit "selected_option" or set it to null.
 

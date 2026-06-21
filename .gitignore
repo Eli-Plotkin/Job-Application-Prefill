@@ -16,3 +16,4 @@ evals/.promptfoo/
 # OS / editor
 .DS_Store
 *.log
+.gstack/

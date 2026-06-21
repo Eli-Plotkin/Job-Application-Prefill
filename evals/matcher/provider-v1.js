@@ -34,6 +34,7 @@ export default class MatcherV1Provider {
     return {
       output: text,
       tokenUsage: {
+        total: resp.usage.input_tokens + resp.usage.output_tokens,
         prompt: resp.usage.input_tokens,
         completion: resp.usage.output_tokens,
       },
