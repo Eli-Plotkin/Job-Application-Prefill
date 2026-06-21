@@ -71,7 +71,6 @@ export default class MatcherV2Provider {
     return {
       output: JSON.stringify({ matches: perQuestionMatches }),
       tokenUsage: {
-        total: totalPromptTokens + totalCompletionTokens,
         prompt: totalPromptTokens,
         completion: totalCompletionTokens,
       },
