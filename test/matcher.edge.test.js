@@ -134,7 +134,7 @@ describe("parseMatchResponse — edge cases", () => {
 
   it("includes a match whose confidence exactly equals the threshold", () => {
     const r = parseMatchResponse(J([{ question_id: "q1", bank_entry_id: "b1", confidence: 0.6 }]), { threshold: 0.6 });
-    expect(r).toEqual([{ fieldId: "q1", entryId: "b1", confidence: 0.6 }]);
+    expect(r).toEqual([{ fieldId: "q1", entryId: "b1", confidence: 0.6, selectedOption: null }]);
   });
 
   it('drops the string "none" and null entry ids', () => {
@@ -152,13 +152,13 @@ describe("parseMatchResponse — edge cases", () => {
     const r = parseMatchResponse(J([{ question_id: "q1", bank_entry_id: "b1" }]), { threshold: 0.1 });
     expect(r).toEqual([]);
     const r0 = parseMatchResponse(J([{ question_id: "q1", bank_entry_id: "b1" }]), { threshold: 0 });
-    expect(r0).toEqual([{ fieldId: "q1", entryId: "b1", confidence: 0 }]);
+    expect(r0).toEqual([{ fieldId: "q1", entryId: "b1", confidence: 0, selectedOption: null }]);
   });
 
   it("parses correctly even when a string value contains braces", () => {
     const text = '{"matches":[{"question_id":"q{1}","bank_entry_id":"b}1{","confidence":0.9}]}';
     expect(parseMatchResponse(text, { threshold: 0.5 })).toEqual([
-      { fieldId: "q{1}", entryId: "b}1{", confidence: 0.9 },
+      { fieldId: "q{1}", entryId: "b}1{", confidence: 0.9, selectedOption: null },
     ]);
   });
 
@@ -185,6 +185,6 @@ describe("parseMatchResponse — edge cases", () => {
       '{"matches":[null,{"question_id":"q1","bank_entry_id":"b1","confidence":1}]}',
       { threshold: 0.5 },
     );
-    expect(r).toEqual([{ fieldId: "q1", entryId: "b1", confidence: 1 }]);
+    expect(r).toEqual([{ fieldId: "q1", entryId: "b1", confidence: 1, selectedOption: null }]);
   });
 });

@@ -108,8 +108,15 @@ For each question, decide which single answer-bank entry best answers it, or non
 
 Only map a question when you are confident the entry genuinely answers it. When in doubt, return null — a wrong fill is worse than a blank field. Never map two unrelated concepts together (e.g. do not map a salary question to a relocation entry).
 
+DROPDOWN QUESTIONS: Some questions include [options: ...] listing the available choices. For these, a match requires BOTH conditions to be satisfied:
+  1. The question is semantically similar to the bank entry's label/answer concept.
+  2. The user's stored answer is semantically similar to one of the listed options.
+When both conditions are met, set "selected_option" to the exact option text (copied verbatim from the list) that best matches the stored answer. If the stored answer does not map to any available option, return bank_entry_id: null — do not guess an unrelated option.
+
+For non-dropdown questions, omit "selected_option" or set it to null.
+
 Respond with ONLY a JSON object, no prose, in exactly this shape:
-{"matches": [{"question_id": "<id>", "bank_entry_id": "<id or null>", "confidence": <number 0..1>}]}
+{"matches": [{"question_id": "<id>", "bank_entry_id": "<id or null>", "confidence": <number 0..1>, "selected_option": "<exact option text or null>"}]}
 Include one object for every question. confidence is your calibrated certainty that the mapping is correct.`;
 
 // Build the Stage-2 request payload. Returns { system, user } strings; the
@@ -118,7 +125,13 @@ Include one object for every question. confidence is your calibrated certainty t
 // KEEP IN SYNC with evals/matcher/prompt.js — that eval validates this exact prompt.
 export function buildMatchPrompt({ questions, answerBank }) {
   const questionLines = questions
-    .map((q) => `- id=${q.id}: ${JSON.stringify(q.label)}`)
+    .map((q) => {
+      const opts =
+        q.options && q.options.length
+          ? ` [options: ${q.options.map((o) => JSON.stringify(o)).join(", ")}]`
+          : "";
+      return `- id=${q.id}: ${JSON.stringify(q.label)}${opts}`;
+    })
     .join("\n");
   const bankLines = answerBank
     .map((b) => `- id=${b.id}: label=${JSON.stringify(b.label)} answer=${JSON.stringify(b.answer)}`)
@@ -168,10 +181,58 @@ export function parseMatchResponse(text, { threshold }) {
     const entryId = m.bank_entry_id;
     const confidence = typeof m.confidence === "number" ? m.confidence : 0;
     if (entryId != null && entryId !== "none" && confidence >= threshold) {
-      out.push({ fieldId: m.question_id, entryId, confidence });
+      const selectedOption = m.selected_option != null && m.selected_option !== "null" ? m.selected_option : null;
+      out.push({ fieldId: m.question_id, entryId, confidence, selectedOption });
     }
   }
   return out;
+}
+
+const MATCH_V2_SYSTEM_PROMPT = `You map a single job-application form question to the best entry in a user's saved answer bank.
+
+You are given ONE QUESTION (with an id and the visible label shown on the form) and a list of ANSWER BANK entries (each with an id, a label, and the saved answer).
+
+Decide which single answer-bank entry best answers the question, or none if no entry is a good fit. Match on meaning, not wording: e.g. "Are you legally authorized to work in the United States?" matches a "Work authorization" entry; "Do you now or in the future require sponsorship?" matches a "Require sponsorship?" entry.
+
+Only return a match when you are confident the entry genuinely answers this specific question. When in doubt, return null — a wrong fill is worse than a blank field.
+
+DROPDOWN QUESTIONS: If the question includes [options: ...] listing the available choices, a match requires BOTH conditions:
+  1. The question is semantically similar to the bank entry's label/answer concept.
+  2. The user's stored answer is semantically similar to one of the listed options.
+When both conditions are met, set "selected_option" to the exact option text (copied verbatim from the list) that best matches the stored answer. If the stored answer does not map to any available option, return bank_entry_id: null.
+
+For non-dropdown questions, omit "selected_option" or set it to null.
+
+Respond with ONLY a JSON object, no prose, in exactly this shape:
+{"bank_entry_id": "<id or null>", "confidence": <number 0..1>, "selected_option": "<exact option text or null>"}
+confidence is your calibrated certainty that the mapping is correct.`;
+
+// Build a Stage-2 v2 request payload for a single question.
+// Returns { system, user } strings.
+export function buildMatchPromptV2({ question, answerBank }) {
+  const bankLines = answerBank
+    .map((b) => `- id=${b.id}: label=${JSON.stringify(b.label)} answer=${JSON.stringify(b.answer)}`)
+    .join("\n");
+
+  const opts =
+    question.options && question.options.length
+      ? ` [options: ${question.options.map((o) => JSON.stringify(o)).join(", ")}]`
+      : "";
+  const user = `QUESTION:\n- id=${question.id}: ${JSON.stringify(question.label)}${opts}\n\nANSWER BANK:\n${bankLines}\n\nReturn the JSON mapping now.`;
+  return { system: MATCH_V2_SYSTEM_PROMPT, user };
+}
+
+// Parse a single-question Stage-2 v2 response into {fieldId, entryId, confidence}
+// or null if no match / below threshold.
+export function parseMatchResponseV2(text, { fieldId, threshold }) {
+  const parsed = JSON.parse(extractJsonObject(String(text)));
+  const entryId = parsed.bank_entry_id;
+  const confidence = typeof parsed.confidence === "number" ? parsed.confidence : 0;
+  if (entryId == null || entryId === "null" || entryId === "none" || confidence < threshold) {
+    return null;
+  }
+  const selectedOption = parsed.selected_option != null && parsed.selected_option !== "null" ? parsed.selected_option : null;
+  return { fieldId, entryId, confidence, selectedOption };
 }
 
 export { STANDARD_KINDS };

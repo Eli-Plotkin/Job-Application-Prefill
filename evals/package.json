@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "promptfoo evals for the Apply Assistant semantic matcher and Write-with-AI drafter.",
+  "description": "promptfoo evals for the Apply Assistant semantic matcher (v1 batched vs v2 per-question).",
   "scripts": {
-    "eval": "npm run eval:matcher && npm run eval:drafter",
     "eval:matcher": "promptfoo eval -c matcher/promptfooconfig.yaml",
-    "eval:drafter": "promptfoo eval -c drafter/promptfooconfig.yaml",
     "view": "promptfoo view"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.69.0"
   },
   "devDependencies": {
     "promptfoo": "^0.118.0"

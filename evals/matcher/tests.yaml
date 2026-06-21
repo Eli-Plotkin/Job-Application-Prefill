@@ -1,47 +1,124 @@
 # =============================================================================
-# Stage-2 matcher test cases — SCAFFOLD ONLY. Fill these in by hand.
-# Do NOT trust auto-generated data here; the whole point is that YOU verify the
-# expected mappings against real page wording.
+# Matcher test cases — four suites testing Stage-2 (LLM) matching.
+# Shared between v1 (batched) and v2 (per-question) evals.
 #
-# Each test supplies three vars:
-#   page_questions : JSON array of {id, label}            (the form's questions)
-#   answer_bank    : JSON array of {id, label, answer}    (the saved profile)
-#   expected       : mapping of question id -> bank entry id, or null for "no match"
+# Suite A: large bank, short application  (4 q  — direct + semantic + no-match)
+# Suite B: large bank, long application   (13 q — direct + semantic + ambiguous + no-match)
+# Suite C: small bank, long application   (12 q — most have no match; tricky URL-type case)
+# Suite D: large bank, exhaustive form    (24 q — stress-test positive matching; 22 match, 2 don't)
 #
-# Replace every TODO_FILL_IN. The first case below is live (and will FAIL until
-# you fill it in — that's expected). The commented skeletons show the three
-# shapes the spec calls out; uncomment and adapt them.
+# expected: question id → bank entry id, or null for "no match expected"
 # =============================================================================
 
-- description: TODO_FILL_IN — differently-worded work-auth question → work-auth entry
+# ===========================================================================
+# Suite A — large bank (15 entries), short application (4 questions)
+# ===========================================================================
+- description: "Suite A — large bank, short app: LinkedIn URL (direct), work-auth (semantic), sponsorship (semantic), GPA (no match)"
   vars:
-    page_questions: '[{"id":"q1","label":"TODO_FILL_IN e.g. Do you have the right to work in the US?"}]'
-    answer_bank: '[{"id":"b1","label":"TODO_FILL_IN e.g. Work authorization","answer":"TODO_FILL_IN e.g. Yes"}]'
+    page_questions: '[{"id":"q1","label":"Your LinkedIn profile URL"},{"id":"q2","label":"Do you have the right to work in the United States?"},{"id":"q3","label":"Will you require an employment visa or company sponsorship?"},{"id":"q4","label":"What was your undergraduate GPA?"}]'
+    answer_bank: '[{"id":"b1","label":"Work authorization","answer":"Yes, I am authorized to work in the United States"},{"id":"b2","label":"Require sponsorship","answer":"No, I do not require visa sponsorship"},{"id":"b3","label":"Years of experience","answer":"5"},{"id":"b4","label":"Education","answer":"Bachelor of Science in Computer Science, University of Michigan, 2020"},{"id":"b5","label":"Desired salary","answer":"$130,000"},{"id":"b6","label":"Available start date","answer":"2 weeks after offer acceptance"},{"id":"b7","label":"Willing to relocate","answer":"Yes, willing to relocate within the US"},{"id":"b8","label":"Remote work preference","answer":"Prefer remote, open to hybrid"},{"id":"b9","label":"LinkedIn URL","answer":"https://linkedin.com/in/johndoe"},{"id":"b10","label":"GitHub URL","answer":"https://github.com/johndoe"},{"id":"b11","label":"Gender","answer":"Male"},{"id":"b12","label":"Veteran status","answer":"I am not a protected veteran"},{"id":"b13","label":"Disability status","answer":"I do not have a disability"},{"id":"b14","label":"Race/Ethnicity","answer":"White / Not Hispanic or Latino"},{"id":"b15","label":"Cover letter summary","answer":"I am excited to bring my 5 years of full-stack engineering experience to this role"}]'
     expected:
-      q1: TODO_FILL_IN # e.g. b1
+      q1: b9    # direct:   "LinkedIn profile URL" label matches "LinkedIn URL" entry
+      q2: b1    # semantic: "right to work" → "Work authorization"
+      q3: b2    # semantic: "employment visa or company sponsorship" → "Require sponsorship"
+      q4: null  # no match: GPA not covered by any bank entry
 
-# --- Skeleton A: a differently-worded question that SHOULD map ----------------
-# - description: sponsorship question maps to the sponsorship entry
-#   vars:
-#     page_questions: '[{"id":"q1","label":"Will you now or in the future require visa sponsorship?"}]'
-#     answer_bank: '[{"id":"b1","label":"Require sponsorship?","answer":"No"}]'
-#     expected:
-#       q1: b1
+# ===========================================================================
+# Suite B — large bank (15 entries), long application (13 questions)
+# ===========================================================================
+- description: "Suite B — large bank, long app: 2 direct, 7 semantic/ambiguous, 2 no-match"
+  vars:
+    page_questions: '[{"id":"q1","label":"GitHub profile URL"},{"id":"q2","label":"Are you legally authorized to work in the United States?"},{"id":"q3","label":"Do you now or in the future anticipate needing employer-sponsored work authorization?"},{"id":"q4","label":"Total years of professional work experience"},{"id":"q5","label":"Highest level of education completed"},{"id":"q6","label":"Salary expectations"},{"id":"q7","label":"Earliest possible start date"},{"id":"q8","label":"Are you open to relocating for this position?"},{"id":"q9","label":"Work environment preference (remote / hybrid / on-site)"},{"id":"q10","label":"Please self-identify your gender"},{"id":"q11","label":"Are you a veteran or active duty service member?"},{"id":"q12","label":"Describe a time you demonstrated leadership in a team setting"},{"id":"q13","label":"What specifically draws you to our company culture?"}]'
+    answer_bank: '[{"id":"b1","label":"Work authorization","answer":"Yes, I am authorized to work in the United States"},{"id":"b2","label":"Require sponsorship","answer":"No, I do not require visa sponsorship"},{"id":"b3","label":"Years of experience","answer":"5"},{"id":"b4","label":"Education","answer":"Bachelor of Science in Computer Science, University of Michigan, 2020"},{"id":"b5","label":"Desired salary","answer":"$130,000"},{"id":"b6","label":"Available start date","answer":"2 weeks after offer acceptance"},{"id":"b7","label":"Willing to relocate","answer":"Yes, willing to relocate within the US"},{"id":"b8","label":"Remote work preference","answer":"Prefer remote, open to hybrid"},{"id":"b9","label":"LinkedIn URL","answer":"https://linkedin.com/in/johndoe"},{"id":"b10","label":"GitHub URL","answer":"https://github.com/johndoe"},{"id":"b11","label":"Gender","answer":"Male"},{"id":"b12","label":"Veteran status","answer":"I am not a protected veteran"},{"id":"b13","label":"Disability status","answer":"I do not have a disability"},{"id":"b14","label":"Race/Ethnicity","answer":"White / Not Hispanic or Latino"},{"id":"b15","label":"Cover letter summary","answer":"I am excited to bring my 5 years of full-stack engineering experience to this role"}]'
+    expected:
+      q1: b10   # direct:    "GitHub profile URL" → "GitHub URL"
+      q2: b1    # semantic:  "legally authorized to work" → "Work authorization"
+      q3: b2    # ambiguous: contains "work authorization" as words but the question is about
+                #             NEEDING sponsorship — must not be pulled toward b1 by surface wording
+      q4: b3    # semantic:  "total years of professional work experience" → "Years of experience"
+      q5: b4    # semantic:  "highest level of education completed" → "Education"
+      q6: b5    # direct:    "salary expectations" → "Desired salary"
+      q7: b6    # semantic:  "earliest possible start date" → "Available start date"
+      q8: b7    # semantic:  "open to relocating" → "Willing to relocate"
+      q9: b8    # semantic:  "work environment preference (remote/hybrid/on-site)" → "Remote work preference"
+      q10: b11  # semantic:  "self-identify your gender" → "Gender"
+      q11: b12  # semantic:  "veteran or active duty service member" → "Veteran status"
+      q12: null # no match:  open-ended behavioral question
+      q13: null # no match:  culture-fit open-ended question
 
-# --- Skeleton B: an unrelated question that MUST map to none ------------------
-# (guards against confident-but-wrong matches)
-# - description: unrelated question maps to none
-#   vars:
-#     page_questions: '[{"id":"q1","label":"What is your favorite programming language?"}]'
-#     answer_bank: '[{"id":"b1","label":"Require sponsorship?","answer":"No"},{"id":"b2","label":"Work authorization","answer":"Yes"}]'
-#     expected:
-#       q1: null
+# ===========================================================================
+# Suite C — small bank (3 entries), long application (12 questions)
+# Most questions have no match; tests that the model abstains correctly.
+# Tricky case: q4 asks for GitHub URL but the bank only has a LinkedIn URL.
+# ===========================================================================
+- description: "Suite C — small bank, long app: 3 matches (2 semantic, 1 direct), 9 no-matches including LinkedIn-vs-GitHub trap"
+  vars:
+    page_questions: '[{"id":"q1","label":"Are you authorized to work in the US?"},{"id":"q2","label":"Will you need visa sponsorship?"},{"id":"q3","label":"Please share your LinkedIn profile link"},{"id":"q4","label":"GitHub profile URL"},{"id":"q5","label":"Total years of professional experience"},{"id":"q6","label":"Salary requirements"},{"id":"q7","label":"Earliest available start date"},{"id":"q8","label":"Willing to relocate?"},{"id":"q9","label":"Do you have a disability?"},{"id":"q10","label":"Veteran status"},{"id":"q11","label":"Describe your most recent project in detail"},{"id":"q12","label":"What is your preferred programming language?"}]'
+    answer_bank: '[{"id":"b1","label":"Work authorization","answer":"Yes"},{"id":"b2","label":"Require sponsorship","answer":"No"},{"id":"b3","label":"LinkedIn URL","answer":"https://linkedin.com/in/johndoe"}]'
+    expected:
+      q1: b1    # semantic: "authorized to work in the US" → "Work authorization"
+      q2: b2    # semantic: "need visa sponsorship" → "Require sponsorship"
+      q3: b3    # direct:   "LinkedIn profile link" → "LinkedIn URL"
+      q4: null  # trap: bank has a LinkedIn URL (b3) but NOT a GitHub URL — must not conflate
+      q5: null  # no match: not covered by the small bank
+      q6: null  # no match
+      q7: null  # no match
+      q8: null  # no match
+      q9: null  # no match
+      q10: null # no match
+      q11: null # no match: behavioral question
+      q12: null # no match
 
-# --- Skeleton C: no matches at all -------------------------------------------
-# (guards the Stage-1 / Stage-2 boundary)
-# - description: nothing in the bank fits
-#   vars:
-#     page_questions: '[{"id":"q1","label":"Describe a time you led a team."}]'
-#     answer_bank: '[{"id":"b1","label":"Work authorization","answer":"Yes"}]'
-#     expected:
-#       q1: null
+# ===========================================================================
+# Suite D — large bank (22 entries), exhaustive form (24 questions)
+# Stress-tests positive matching: 22 of 24 questions should match something.
+# Includes direct matches (label ≈ identical), near-direct (one qualifier added),
+# and semantic (completely re-worded but same concept).
+# Two intentional no-matches at the end guard against over-matching.
+# ===========================================================================
+- description: "Suite D — large bank, exhaustive form: 22 direct/semantic matches + 2 no-matches"
+  vars:
+    page_questions: '[{"id":"q1","label":"LinkedIn profile URL"},{"id":"q2","label":"GitHub profile URL"},{"id":"q3","label":"Are you legally authorized to work in the United States?"},{"id":"q4","label":"Will you now or in the future need employer sponsorship for a work visa?"},{"id":"q5","label":"Legal first name"},{"id":"q6","label":"Last name / surname"},{"id":"q7","label":"Email address"},{"id":"q8","label":"Mobile phone number"},{"id":"q9","label":"Personal website or portfolio URL"},{"id":"q10","label":"Years of relevant professional experience"},{"id":"q11","label":"Highest degree earned and institution attended"},{"id":"q12","label":"Salary expectations for this role"},{"id":"q13","label":"Anticipated start date if an offer is extended"},{"id":"q14","label":"Are you willing to relocate if required by the position?"},{"id":"q15","label":"Preferred work arrangement (remote / hybrid / in-office)"},{"id":"q16","label":"Gender identity"},{"id":"q17","label":"Veteran or military status"},{"id":"q18","label":"Do you identify as an individual with a disability as defined under Section 503 of the Rehabilitation Act?"},{"id":"q19","label":"Racial or ethnic identification"},{"id":"q20","label":"How did you learn about this job opening?"},{"id":"q21","label":"Do you currently hold an active U.S. government security clearance?"},{"id":"q22","label":"Please include a brief cover letter or personal statement"},{"id":"q23","label":"Tell us something unique about yourself that is not captured elsewhere in this application"},{"id":"q24","label":"Current employment status (full-time / part-time / contractor / unemployed)"}]'
+    answer_bank: '[{"id":"b1","label":"Work authorization","answer":"Yes, I am authorized to work in the United States"},{"id":"b2","label":"Require sponsorship","answer":"No, I do not require sponsorship now or in the future"},{"id":"b3","label":"First name","answer":"John"},{"id":"b4","label":"Last name","answer":"Doe"},{"id":"b5","label":"Email","answer":"johndoe@gmail.com"},{"id":"b6","label":"Phone","answer":"555-867-5309"},{"id":"b7","label":"LinkedIn URL","answer":"https://linkedin.com/in/johndoe"},{"id":"b8","label":"GitHub URL","answer":"https://github.com/johndoe"},{"id":"b9","label":"Portfolio website","answer":"https://johndoe.dev"},{"id":"b10","label":"Years of experience","answer":"7"},{"id":"b11","label":"Education","answer":"Bachelor of Science in Computer Science, Stanford University, 2017"},{"id":"b12","label":"Desired salary","answer":"$145,000"},{"id":"b13","label":"Available start date","answer":"3 weeks after receiving an offer"},{"id":"b14","label":"Willing to relocate","answer":"Yes, open to relocation"},{"id":"b15","label":"Remote work preference","answer":"Strongly prefer remote, open to hybrid"},{"id":"b16","label":"Gender","answer":"Male"},{"id":"b17","label":"Veteran status","answer":"I am not a protected veteran"},{"id":"b18","label":"Disability status","answer":"I do not have a disability"},{"id":"b19","label":"Race/Ethnicity","answer":"Asian / Pacific Islander"},{"id":"b20","label":"Cover letter","answer":"I am a senior software engineer with 7 years of experience building scalable web applications. I am passionate about clean architecture and developer experience."},{"id":"b21","label":"Referral source","answer":"LinkedIn job posting"},{"id":"b22","label":"Security clearance","answer":"No active clearance"}]'
+    expected:
+      q1: b7    # direct:       "LinkedIn profile URL" → "LinkedIn URL"
+      q2: b8    # direct:       "GitHub profile URL" → "GitHub URL"
+      q3: b1    # semantic:     "legally authorized to work" → "Work authorization"
+      q4: b2    # semantic:     "need employer sponsorship for a work visa" → "Require sponsorship"
+      q5: b3    # near-direct:  "Legal first name" → "First name"
+      q6: b4    # near-direct:  "Last name / surname" → "Last name"
+      q7: b5    # near-direct:  "Email address" → "Email"
+      q8: b6    # semantic:     "Mobile phone number" → "Phone"
+      q9: b9    # semantic:     "Personal website or portfolio URL" → "Portfolio website"
+      q10: b10  # semantic:     "Years of relevant professional experience" → "Years of experience"
+      q11: b11  # semantic:     "Highest degree earned and institution attended" → "Education"
+      q12: b12  # semantic:     "Salary expectations for this role" → "Desired salary"
+      q13: b13  # semantic:     "Anticipated start date if an offer is extended" → "Available start date"
+      q14: b14  # semantic:     "willing to relocate if required by the position" → "Willing to relocate"
+      q15: b15  # semantic:     "Preferred work arrangement (remote/hybrid/in-office)" → "Remote work preference"
+      q16: b16  # near-direct:  "Gender identity" → "Gender"
+      q17: b17  # semantic:     "Veteran or military status" → "Veteran status"
+      q18: b18  # semantic:     long legal phrasing about Section 503 disability → "Disability status"
+      q19: b19  # semantic:     "Racial or ethnic identification" → "Race/Ethnicity"
+      q20: b21  # semantic:     "How did you learn about this job opening?" → "Referral source"
+      q21: b22  # semantic:     "active U.S. government security clearance" → "Security clearance"
+      q22: b20  # semantic:     "brief cover letter or personal statement" → "Cover letter"
+      q23: null # no match:     open-ended unique-fact prompt; nothing in bank covers it
+      q24: null # no match:     employment status (employed/unemployed/contractor) not in bank
+
+# ===========================================================================
+# Suite E — dropdown questions (3 cases)
+# Case 1: question AND option both match the bank → full match + selected_option
+# Case 2: question matches bank but no option fits the bank answer → null
+# Case 3: option text resembles bank answer but question topic differs → null
+# ===========================================================================
+- description: "Suite E — dropdowns: question+option match (case 1), question matches but no option fits (case 2), option matches answer text but question topic differs (case 3)"
+  vars:
+    page_questions: '[{"id":"q1","label":"What type of employment are you seeking?","options":["Full-time","Part-time","Contract","Internship"]},{"id":"q2","label":"What is your highest level of education?","options":["Less than high school","High school diploma or GED","Associates degree","Bachelors degree"]},{"id":"q3","label":"Have you ever been terminated from a position for cause?","options":["Yes","No","Prefer not to disclose"]}]'
+    answer_bank: '[{"id":"b1","label":"Employment type","answer":"Full-time"},{"id":"b2","label":"Education level","answer":"Ph.D. in Computer Science from MIT"},{"id":"b3","label":"Work authorization","answer":"Yes, I am authorized to work in the United States"},{"id":"b4","label":"Require sponsorship","answer":"No, I do not require visa sponsorship"},{"id":"b5","label":"Years of experience","answer":"8"}]'
+    expected:
+      q1: b1    # question "employment type" matches bank label; "Full-time" option matches bank answer exactly
+      q2: null  # question matches "Education level" but Ph.D. is not among the four options (all sub-bachelor)
+      q3: null  # "Yes" option superficially matches bank answer but question topic (termination) ≠ bank concept (work authorization)
+    expected_options:
+      q1: "Full-time"  # must select this exact option text verbatim

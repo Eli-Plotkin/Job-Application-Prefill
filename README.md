@@ -26,6 +26,10 @@ Built to the spec in `Apply_Assistant_Spec.md`.
 - **Stage 2** — one batched AI call maps every remaining varied-wording question
   (work authorization, sponsorship, relocation, "how did you hear", …) to answer
   bank entries, with a confidence threshold so weak guesses are left blank.
+  For dropdown fields the model also sees the available option texts and must
+  confirm the stored answer maps to a real option before committing — a mismatch
+  returns no fill rather than a wrong one. Two Stage 2 strategies are under eval:
+  a single batched call (v1) vs. one parallel call per field (v2).
 
 ## Build & load
 

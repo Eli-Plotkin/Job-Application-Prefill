@@ -8,6 +8,7 @@ import { parseMatchResponse } from "../../src/lib/matcher.js";
 
 export default function (output, context) {
   const expected = (context && context.vars && context.vars.expected) || {};
+  const expectedOptions = (context && context.vars && context.vars.expected_options) || {};
 
   let predicted;
   try {
@@ -17,12 +18,19 @@ export default function (output, context) {
   }
 
   const predMap = Object.fromEntries(predicted.map((p) => [p.fieldId, p.entryId]));
+  const predOptionMap = Object.fromEntries(predicted.map((p) => [p.fieldId, p.selectedOption ?? null]));
+
   const keys = new Set([...Object.keys(expected), ...Object.keys(predMap)]);
   const mismatches = [];
   for (const k of keys) {
     const exp = expected[k] == null ? null : expected[k];
     const got = predMap[k] == null ? null : predMap[k];
     if (exp !== got) mismatches.push(`${k}: expected ${exp}, got ${got}`);
+  }
+
+  for (const [k, expOpt] of Object.entries(expectedOptions)) {
+    const gotOpt = predOptionMap[k] ?? null;
+    if (expOpt !== gotOpt) mismatches.push(`${k} selected_option: expected "${expOpt}", got "${gotOpt}"`);
   }
 
   return mismatches.length === 0

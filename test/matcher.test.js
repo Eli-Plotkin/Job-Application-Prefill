@@ -140,13 +140,13 @@ describe("parseMatchResponse", () => {
       ],
     });
     const result = parseMatchResponse(text, { threshold: 0.6 });
-    expect(result).toEqual([{ fieldId: "q1", entryId: "b1", confidence: 0.95 }]);
+    expect(result).toEqual([{ fieldId: "q1", entryId: "b1", confidence: 0.95, selectedOption: null }]);
   });
 
   it("strips markdown code fences before parsing", () => {
     const text = "```json\n" + JSON.stringify({ matches: [{ question_id: "q1", bank_entry_id: "b1", confidence: 1 }] }) + "\n```";
     const result = parseMatchResponse(text, { threshold: 0.6 });
-    expect(result).toEqual([{ fieldId: "q1", entryId: "b1", confidence: 1 }]);
+    expect(result).toEqual([{ fieldId: "q1", entryId: "b1", confidence: 1, selectedOption: null }]);
   });
 
   it("throws on unparseable output", () => {

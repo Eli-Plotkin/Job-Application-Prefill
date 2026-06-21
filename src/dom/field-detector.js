@@ -143,6 +143,12 @@ export function detectFields(root = document) {
       label: resolveLabel(el),
       autocomplete: collapse(el.getAttribute("autocomplete") || ""),
       name: el.getAttribute("name") || "",
+      // Capture visible option texts for <select> so the matcher can reason about
+      // which option actually maps to the stored answer. Skip placeholder options
+      // (empty value) since they represent no selection.
+      options: tag === "select"
+        ? Array.from(el.options).filter((o) => o.value !== "").map((o) => collapse(o.textContent))
+        : undefined,
     });
   }
   return fields;

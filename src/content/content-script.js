@@ -78,14 +78,16 @@ function createController() {
     async onFillAll() {
       for (const r of resultsByField.values()) {
         if (r.status === "matched") {
-          adapter.fill(r.field, r.entry.answer, { highlight: context.settings.highlightFilled });
+          const value = r.match?.selectedOption ?? r.entry.answer;
+          adapter.fill(r.field, value, { highlight: context.settings.highlightFilled });
         }
       }
     },
     async onFillField(fieldId) {
       const r = resultsByField.get(fieldId);
       if (!r || !r.entry) return false;
-      return adapter.fill(r.field, r.entry.answer, { highlight: context.settings.highlightFilled });
+      const value = r.match?.selectedOption ?? r.entry.answer;
+      return adapter.fill(r.field, value, { highlight: context.settings.highlightFilled });
     },
     async onWrite(fieldId, guidance) {
       const r = resultsByField.get(fieldId);
