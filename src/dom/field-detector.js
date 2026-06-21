@@ -73,8 +73,12 @@ export function resolveLabel(el) {
 
   const wrapping = el.closest("label");
   if (wrapping) {
-    // Remove the control's own text contribution (e.g. option text) heuristically.
-    const text = collapse(wrapping.textContent);
+    // Read the label text WITHOUT the control's own contribution — otherwise a
+    // <label>Country <select><option>US</option></select></label> resolves to
+    // "Country US". Clone, strip form controls, then read.
+    const clone = wrapping.cloneNode(true);
+    for (const ctrl of clone.querySelectorAll("input, select, textarea, button")) ctrl.remove();
+    const text = collapse(clone.textContent);
     if (text) return text;
   }
 
@@ -86,11 +90,15 @@ export function resolveLabel(el) {
 
 function isVisible(el) {
   if (el.disabled) return false;
+  // A read-only control can't be filled meaningfully — leave it out.
+  if (el.readOnly || el.getAttribute("aria-readonly") === "true") return false;
   if (el.hasAttribute("hidden")) return false;
   if (el.getAttribute("aria-hidden") === "true") return false;
   const style = el.getAttribute("style") || "";
   if (/display\s*:\s*none/i.test(style) || /visibility\s*:\s*hidden/i.test(style)) return false;
+  // Hidden via an ancestor (e.g. an inactive Workday wizard step).
   if (el.closest("[hidden]")) return false;
+  if (el.closest('[aria-hidden="true"]')) return false;
   return true;
 }
 
@@ -145,7 +153,11 @@ export function getFieldElement(root, id) {
   return root.querySelector(`[${FIELD_ID_ATTR}="${cssEscape(id)}"]`);
 }
 
-// True for fields that should offer "Write with AI" (free-text only).
+// True for fields that should offer "Write with AI" — genuinely free-text only.
+// Plain text inputs and textareas qualify; email/tel/url/number/search do not
+// (drafting prose into them is nonsensical).
+const FREE_TEXT_INPUT_TYPES = new Set(["text", ""]);
 export function isFreeText(field) {
-  return field.tag === "textarea" || (field.tag === "input" && TEXT_INPUT_TYPES.has(field.type));
+  if (field.tag === "textarea") return true;
+  return field.tag === "input" && FREE_TEXT_INPUT_TYPES.has(field.type);
 }

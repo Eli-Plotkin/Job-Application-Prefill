@@ -13,8 +13,10 @@ export async function runMatching({ fields, answerBank, threshold, complete }) {
   const unmatchedSet = new Set(unmatchedFieldIds);
   const unmatchedFields = fields.filter((f) => unmatchedSet.has(f.id));
 
+  // Stage 2 only earns its API call when there are unmatched fields AND the bank
+  // has entries that could conceivably match them. An empty bank can't match.
   let stage2Error = null;
-  if (unmatchedFields.length > 0 && typeof complete === "function") {
+  if (unmatchedFields.length > 0 && answerBank.length > 0 && typeof complete === "function") {
     const prompt = buildMatchPrompt({
       questions: unmatchedFields.map((f) => ({ id: f.id, label: f.label })),
       answerBank,

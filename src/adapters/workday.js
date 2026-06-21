@@ -22,7 +22,10 @@ export class WorkdayAdapter extends BaseAdapter {
   static id = "workday";
 
   static matches(host) {
-    return /(^|\.)myworkdayjobs\.com$/i.test(String(host || "")) || /myworkday/i.test(String(host || ""));
+    const h = String(host || "").toLowerCase();
+    // Workday tenants are company.wdN.myworkdayjobs.com (and some myworkday.com).
+    // Anchored to the end so "myworkdayjobs.com.evil.com" does NOT match.
+    return /(^|\.)myworkdayjobs\.com$/.test(h) || /(^|\.)myworkday\.com$/.test(h);
   }
 
   detect(root = document) {

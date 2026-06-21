@@ -40,7 +40,9 @@ export function detectFieldKind(field) {
   const tokens = autocompleteTokens(field);
 
   if (type === "email" || tokens.includes("email")) return "email";
-  if (type === "tel" || tokens.includes("tel")) return "tel";
+  // The autocomplete spec uses "tel" plus granular variants (tel-national,
+  // tel-country-code, …) — treat any tel* token as a phone field.
+  if (type === "tel" || tokens.some((t) => t === "tel" || t.startsWith("tel-"))) return "tel";
   if (tokens.includes("given-name")) return "given-name";
   if (tokens.includes("family-name")) return "family-name";
   if (tokens.includes("name")) return "full-name";
@@ -127,16 +129,26 @@ export function buildMatchPrompt({ questions, answerBank }) {
 }
 
 // Extract the first balanced top-level JSON object from a model response,
-// tolerating markdown fences and surrounding prose.
+// tolerating markdown fences and surrounding prose. String-aware so braces that
+// appear inside string values (e.g. "q{1}") don't throw off the brace counter.
 function extractJsonObject(text) {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const candidate = fenced ? fenced[1] : text;
+  const candidate = (fenced ? fenced[1] : text).trim();
   const start = candidate.indexOf("{");
   if (start === -1) throw new Error("No JSON object found in matcher response");
   let depth = 0;
+  let inString = false;
+  let escaped = false;
   for (let i = start; i < candidate.length; i++) {
     const ch = candidate[i];
-    if (ch === "{") depth++;
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === "\\") escaped = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') inString = true;
+    else if (ch === "{") depth++;
     else if (ch === "}") {
       depth--;
       if (depth === 0) return candidate.slice(start, i + 1);
