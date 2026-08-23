@@ -17,3 +17,4 @@ evals/.promptfoo/
 .DS_Store
 *.log
 .gstack/
+.claude/
