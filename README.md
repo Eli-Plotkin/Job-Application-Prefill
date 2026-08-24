@@ -17,7 +17,7 @@ data leaves your machine except calls to your configured Anthropic API.
   matching works — roughly name/email/phone/profile-URL fields. Semantic matching
   and Write with AI both require the key.
 - Cost is small but not zero: matching a typical application runs a fraction of a
-  cent on the default model. The dasnhboard tracks weekly and lifetime spend.
+  cent on the default model. The dashboard tracks weekly and lifetime spend.
 
 ## What it does
 
@@ -120,7 +120,7 @@ for drafting (better quality). Both are configurable in the dashboard.
 The dashboard reports estimated weekly and lifetime API spend, computed in the
 background worker from each response's token usage. Pricing is a small built-in
 table keyed by model prefix — if you switch to a model that isn't in it, those
-calls are counted as *unpriced* and called out in the dashboard rather than
+calls are counted as _unpriced_ and called out in the dashboard rather than
 silently counted as free.
 
 ## Evals
