@@ -12,9 +12,12 @@ const MODEL_PRICING = {
   "claude-sonnet-4-6": { input: 3.00, output: 15.00 },
 };
 
+// Returns the call's cost in USD, or null when the model isn't in the pricing
+// table. Null is distinct from 0: the dashboard exposes model names as free text,
+// so an unrecognized model must be reported as unpriced rather than as free.
 function computeCostUsd(model, inputTokens, outputTokens) {
   const key = Object.keys(MODEL_PRICING).find((k) => model.startsWith(k));
-  if (!key) return 0;
+  if (!key) return null;
   const { input, output } = MODEL_PRICING[key];
   return (inputTokens * input + outputTokens * output) / 1_000_000;
 }
@@ -33,7 +36,8 @@ async function complete({ model, system, user, maxTokens }) {
     messages: [{ role: "user", content: user }],
   });
   const usd = computeCostUsd(resolvedModel, resp.usage.input_tokens, resp.usage.output_tokens);
-  if (usd > 0) recordSpend(usd); // fire-and-forget; don't block the response
+  // Fire-and-forget so spend bookkeeping never delays or fails the completion.
+  recordSpend({ usd: usd ?? 0, priced: usd !== null }).catch(() => {});
   return resp.content
     .filter((b) => b.type === "text")
     .map((b) => b.text)

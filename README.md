@@ -5,7 +5,19 @@ from a saved profile, with per-question AI drafting for open-ended questions. Yo
 always review and click submit yourself — nothing is ever auto-submitted, and no
 data leaves your machine except calls to your configured Anthropic API.
 
-Built to the spec in `Apply_Assistant_Spec.md`.
+> **Note on `§` markers.** Comments throughout `src/` cite sections (`§4`, `§7`, …)
+> of the internal design spec this was built against. That document isn't part of
+> this repo; the markers are provenance, and every file is readable without it.
+
+## Requirements
+
+- **Node 18+** and Chrome 111+.
+- **An Anthropic API key** ([console.anthropic.com](https://console.anthropic.com/settings/keys)),
+  added in the dashboard. Without one the extension still runs, but only Stage 1
+  matching works — roughly name/email/phone/profile-URL fields. Semantic matching
+  and Write with AI both require the key.
+- Cost is small but not zero: matching a typical application runs a fraction of a
+  cent on the default model. The dasnhboard tracks weekly and lifetime spend.
 
 ## What it does
 
@@ -18,7 +30,7 @@ Built to the spec in `Apply_Assistant_Spec.md`.
 5. For open-ended questions, click **Write with AI** to draft an answer from your
    resume + blurb, then **Rewrite** with guidance to iterate.
 
-### Matching (two stages, §4)
+### Matching (two stages)
 
 - **Stage 1** — free, instant, deterministic. Standardized identity/contact
   fields only (name, email, phone, LinkedIn/GitHub) via `autocomplete` tokens and
@@ -50,13 +62,13 @@ configure your profile and Anthropic API key.
 ## Test
 
 ```bash
-npm test                # vitest, jsdom — 73 tests across the core logic
+npm test                # vitest + jsdom — 211 tests across the core logic
 npm run lint
 ```
 
-The pure logic (matcher, drafter, storage, field detection, React-safe filling,
-Workday adapter, overlay, matching engine) is covered by unit tests. The browser
-edges (background SDK call, resume PDF/DOCX extraction) are thin and verified
+The pure logic (matcher, drafter, storage, spend tracking, field detection,
+React-safe filling, Workday adapter, overlay, matching engine) is covered by unit
+tests. The browser edges (resume PDF/DOCX extraction) are thin and verified
 manually in a real browser.
 
 ## Architecture
@@ -86,6 +98,8 @@ src/
     resume-parser.js   file-type routing (pure, injectable backends)
     resume-backends.js pdf.js + mammoth (vendored, runtime-loaded)
 evals/                 promptfoo eval harness (see evals/README.md)
+preview/               static mockup of the dashboard for design iteration
+scripts/               icon generation + font fetching (run by the build)
 ```
 
 Field detection + filling is an **adapter** so Greenhouse/Lever/Ashby adapters
@@ -98,19 +112,29 @@ All data (resume text, blurb, answer bank, settings, API key) is stored locally
 via `chrome.storage.local`. No sync, no server, no analytics. Use **Export /
 Import** in the dashboard to back up or move to another device.
 
-## Models
+## Models & spend
 
 Defaults: `claude-haiku-4-5` for matching (cheap, batched) and `claude-sonnet-4-6`
 for drafting (better quality). Both are configurable in the dashboard.
 
+The dashboard reports estimated weekly and lifetime API spend, computed in the
+background worker from each response's token usage. Pricing is a small built-in
+table keyed by model prefix — if you switch to a model that isn't in it, those
+calls are counted as *unpriced* and called out in the dashboard rather than
+silently counted as free.
+
 ## Evals
 
-The matcher and drafter prompts are validated with [promptfoo](https://promptfoo.dev).
-The eval prompts import the extension's real prompt builders, so they can't drift.
-See [`evals/README.md`](evals/README.md). The harness is scaffolded with clearly
-marked placeholder cases for you to fill in and verify by hand.
+The Stage-2 matcher prompt is validated with [promptfoo](https://promptfoo.dev).
+The eval imports the extension's real prompt builder, so it can't drift from what
+ships. Five hand-authored suites cover direct, semantic, ambiguous, abstention,
+and dropdown-option cases. See [`evals/README.md`](evals/README.md).
 
 ## Scope (v1)
 
 No job scraping, no auto-submit, no auto-login/CAPTCHA, no multi-step wizard
 navigation, no cloud sync. The extension assists a human actively filling a form.
+
+## License
+
+[MIT](LICENSE).

@@ -393,6 +393,8 @@ textarea { resize: vertical; min-height: 120px; line-height: 1.55; }
   margin-top: 2px;
 }
 
+.spend-note { margin-top: 2px; }
+
 /* ---- Toast ---- */
 .toast {
   position: fixed;

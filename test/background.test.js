@@ -86,6 +86,36 @@ describe("background AA_COMPLETE broker", () => {
     expect(arg.max_tokens).toBe(1024);
   });
 
+  it("records a model outside the pricing table as unpriced rather than free", async () => {
+    await loadBackground(async () => ({ settings: { apiKey: "sk", matchModel: "some-other-model" } }));
+    create.mockResolvedValue({
+      content: [{ type: "text", text: "x" }],
+      usage: { input_tokens: 1000, output_tokens: 1000 },
+    });
+
+    messageListener({ type: "AA_COMPLETE", system: "s", user: "u" }, {}, vi.fn());
+    await flush();
+
+    const written = chrome.storage.local.set.mock.calls.at(-1)[0].spendLog;
+    expect(written.lifetimeUsd).toBe(0);
+    expect(written.unpricedCalls).toBe(1);
+  });
+
+  it("prices a known model and adds it to the spend log", async () => {
+    await loadBackground(async () => ({ settings: { apiKey: "sk", matchModel: "claude-haiku-4-5" } }));
+    create.mockResolvedValue({
+      content: [{ type: "text", text: "x" }],
+      usage: { input_tokens: 1_000_000, output_tokens: 0 },
+    });
+
+    messageListener({ type: "AA_COMPLETE", system: "s", user: "u" }, {}, vi.fn());
+    await flush();
+
+    const written = chrome.storage.local.set.mock.calls.at(-1)[0].spendLog;
+    expect(written.lifetimeUsd).toBeCloseTo(0.8, 10); // 1M input tokens @ $0.80/MTok
+    expect(written.unpricedCalls).toBe(0);
+  });
+
   it("responds with an error when no API key is configured", async () => {
     await loadBackground(async () => ({})); // no settings stored → empty key
     const sendResponse = vi.fn();

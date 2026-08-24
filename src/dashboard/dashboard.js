@@ -202,6 +202,15 @@ async function renderSpend() {
   const log = await getSpendLog();
   $("spend-weekly").textContent = formatUsd(log.weeklyUsd);
   $("spend-lifetime").textContent = formatUsd(log.lifetimeUsd);
+
+  // Models outside the built-in pricing table contribute $0, which would make
+  // the totals look free rather than unknown. Say so explicitly.
+  const note = $("spend-note");
+  const n = log.unpricedCalls;
+  note.hidden = n === 0;
+  note.textContent = n === 0
+    ? ""
+    : `${n} call${n === 1 ? "" : "s"} used a model with no known price and ${n === 1 ? "is" : "are"} not included above.`;
 }
 
 // ---- Backup ----------------------------------------------------------------

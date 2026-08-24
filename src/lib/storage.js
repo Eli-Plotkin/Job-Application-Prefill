@@ -57,25 +57,45 @@ function weekStartIso(date) {
   return d.toISOString().slice(0, 10);
 }
 
+const EMPTY_SPEND_LOG = { lifetimeUsd: 0, weeklyUsd: 0, unpricedCalls: 0 };
+
 export async function getSpendLog() {
   const got = await chrome.storage.local.get(STORAGE_KEYS.spendLog);
-  return got[STORAGE_KEYS.spendLog] || {
-    lifetimeUsd: 0,
-    weeklyUsd: 0,
+  const stored = got[STORAGE_KEYS.spendLog] || {};
+  return {
+    ...EMPTY_SPEND_LOG,
     weekStart: weekStartIso(new Date()),
+    ...stored,
   };
 }
 
-export async function recordSpend(usd) {
+// Serializes spend writes. recordSpend is read-modify-write, so two overlapping
+// calls would otherwise both read the same baseline and one would clobber the
+// other's total. Chaining makes concurrent callers queue instead of race.
+let spendChain = Promise.resolve();
+
+async function applySpend(usd, priced) {
   const log = await getSpendLog();
   const thisWeek = weekStartIso(new Date());
+  const carriedWeekly = log.weekStart === thisWeek ? log.weeklyUsd : 0;
   await chrome.storage.local.set({
     [STORAGE_KEYS.spendLog]: {
       lifetimeUsd: log.lifetimeUsd + usd,
-      weeklyUsd: log.weekStart === thisWeek ? log.weeklyUsd + usd : usd,
+      weeklyUsd: carriedWeekly + usd,
       weekStart: thisWeek,
+      // Calls on a model absent from the pricing table contribute $0. Counting
+      // them lets the dashboard say "this total is incomplete" instead of
+      // silently under-reporting.
+      unpricedCalls: log.unpricedCalls + (priced ? 0 : 1),
     },
   });
+}
+
+export function recordSpend({ usd = 0, priced = true } = {}) {
+  const work = spendChain.then(() => applySpend(usd, priced));
+  // The chain must survive a failed write, or one error stalls every later call.
+  spendChain = work.catch(() => {});
+  return work;
 }
 
 // Stable-ish unique id for answer-bank rows and similar.

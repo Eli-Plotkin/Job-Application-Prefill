@@ -4,7 +4,9 @@
 // model to answer in the first person, concisely, truthfully, in the user's
 // voice — and to never fabricate facts not supported by the resume/blurb.
 //
-// KEEP IN SYNC with evals/drafter/prompt.js — that eval validates this exact prompt.
+// Not eval-covered yet — unlike the matcher, drafting has no automated suite in
+// evals/. Changes here are only checked by the unit tests in test/drafter*.test.js,
+// which assert prompt structure rather than output quality.
 
 const DRAFT_SYSTEM_PROMPT = `You help a job applicant draft answers to application questions in their own voice.
 
