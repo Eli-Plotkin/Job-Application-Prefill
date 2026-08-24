@@ -8,16 +8,10 @@
 // to answer-bank entries. This module builds the prompt and parses the response;
 // the actual network call lives in the background worker.
 
-const STANDARD_KINDS = [
-  "given-name",
-  "family-name",
-  "full-name",
-  "email",
-  "tel",
-  "url-linkedin",
-  "url-github",
-  "url-generic",
-];
+// The kinds Stage 1 can classify. Kept as a comment rather than an array because
+// nothing dispatches on the set — both sides just return these string literals:
+//   given-name · family-name · full-name · email · tel
+//   url-linkedin · url-github · url-generic
 
 function autocompleteTokens(field) {
   return String(field.autocomplete || "")
@@ -34,7 +28,7 @@ function urlKindFromHints(field) {
 }
 
 // Classify a detected page field using only reliable, standardized signals.
-// Returns one of STANDARD_KINDS, or null if it isn't a standardized field.
+// Returns one of the standard kinds above, or null if it isn't standardized.
 export function detectFieldKind(field) {
   const type = String(field.type || "").toLowerCase();
   const tokens = autocompleteTokens(field);
@@ -187,5 +181,3 @@ export function parseMatchResponse(text, { threshold }) {
   }
   return out;
 }
-
-export { STANDARD_KINDS };

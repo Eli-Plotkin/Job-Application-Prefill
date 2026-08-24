@@ -2,8 +2,9 @@
 // the extension's own parser, then checks the predicted mapping equals the
 // expected mapping declared on each test case (vars.expected).
 //
-// TODO_FILL_IN: decide whether to evaluate the RAW mapping (threshold 0, below)
-// or the threshold-filtered mapping the extension would actually apply.
+// Scored against the RAW mapping (threshold 0) on purpose: a failure should point
+// at the prompt, not at whatever confidence cutoff the user happens to have set.
+// Threshold behavior is covered separately by the engine unit tests.
 import { parseMatchResponse } from "../../src/lib/matcher.js";
 
 export default function (output, context) {

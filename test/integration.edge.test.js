@@ -67,7 +67,7 @@ describe("no API key: Stage 1 only, overlay still useful", () => {
 
     // Email matched; textarea + select unmatched.
     const badges = Array.from(overlay.shadow.querySelectorAll("[data-badge]")).map((b) => b.textContent);
-    expect(badges.filter((t) => /found/i.test(t))).toHaveLength(1);
+    expect(badges.filter((t) => /ready to fill/i.test(t))).toHaveLength(1);
     // Write with AI only on the unmatched textarea (not the select).
     expect(overlay.shadow.querySelectorAll('[data-action="write"]')).toHaveLength(1);
     overlay.destroy();

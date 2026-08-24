@@ -3,6 +3,7 @@
 // the matching engine, and renders the overlay. Nothing is filled until the user
 // clicks. All heavy logic lives in tested modules; this file is just wiring.
 import { getAdapter } from "../adapters/registry.js";
+import { unhighlightAll } from "../dom/field-filler.js";
 import { runMatching } from "../lib/engine.js";
 import { buildDraftPrompt, buildRewritePrompt } from "../lib/drafter.js";
 import { getAnswerBank, getResume, getBlurb, getSettings } from "../lib/storage.js";
@@ -34,6 +35,9 @@ function createController() {
   let context = { answerBank: [], resumeText: "", blurb: "", settings: null };
   let resultsByField = new Map();
   const drafts = new Map();
+  // Stage 2 is a network round trip, so a second activation during a scan would
+  // fire a second billable call. Guards both first activation and Re-scan.
+  let scanning = false;
 
   async function loadContext() {
     const [answerBank, resume, blurb, settings] = await Promise.all([
@@ -72,16 +76,21 @@ function createController() {
       chrome.runtime.sendMessage({ type: "AA_OPEN_DASHBOARD" });
     },
     async onRescan() {
-      await loadContext();
-      overlay.render(await scanAndMatch());
+      await runScan("Re-scanning this page…");
     },
+    // Reports which fields actually took the value. adapter.fill returns false
+    // when nothing on the page accepted it (e.g. a dropdown whose options don't
+    // include the saved answer) — the overlay needs that to repaint honestly.
     async onFillAll() {
+      const filled = [];
+      const failed = [];
       for (const r of resultsByField.values()) {
-        if (r.status === "matched") {
-          const value = r.match?.selectedOption ?? r.entry.answer;
-          adapter.fill(r.field, value, { highlight: context.settings.highlightFilled });
-        }
+        if (r.status !== "matched") continue;
+        const value = r.match?.selectedOption ?? r.entry.answer;
+        const ok = adapter.fill(r.field, value, { highlight: context.settings.highlightFilled });
+        (ok === false ? failed : filled).push(r.field.id);
       }
+      return { filled, failed };
     },
     async onFillField(fieldId) {
       const r = resultsByField.get(fieldId);
@@ -110,22 +119,37 @@ function createController() {
     },
   };
 
-  async function activate() {
-    if (!overlay) {
-      overlay = new Overlay(callbacks);
-      overlay.mount();
-    }
+  // The one scan path, shared by first activation and Re-scan. Guarded so a
+  // repeat click during an in-flight Stage 2 call can't fire a second billable
+  // request, and so the panel always shows progress instead of sitting blank.
+  async function runScan(loadingMessage) {
+    if (scanning) return;
+    scanning = true;
+    // Detection reassigns field ids from scratch, so highlights from a previous
+    // scan no longer correspond to anything in the new results.
+    unhighlightAll(document);
+    overlay.renderLoading(loadingMessage);
     try {
       await loadContext();
       const results = await scanAndMatch();
-      overlay.render(results);
+      overlay.render(results, { emptyBank: context.answerBank.length === 0 });
       if (!context.settings.apiKey) {
         overlay.showError("No API key set — only standardized fields were matched. Add a key in the dashboard for AI matching and drafting.");
       }
     } catch (e) {
       overlay.render([]);
       overlay.showError(humanError(e));
+    } finally {
+      scanning = false;
     }
+  }
+
+  async function activate() {
+    if (!overlay) {
+      overlay = new Overlay(callbacks);
+      overlay.mount();
+    }
+    await runScan("Scanning this page…");
   }
 
   return { activate };

@@ -1,7 +1,7 @@
 // Base ATS adapter (§7). The field-detection + fill layer is built as an adapter
 // so Greenhouse/Lever/Ashby adapters can be added later without rewriting core
 // logic. The base adapter handles standard native HTML forms.
-import { detectFields, getFieldElement, resolveLabel } from "../dom/field-detector.js";
+import { detectFields, getFieldElement } from "../dom/field-detector.js";
 import { fillField } from "../dom/field-filler.js";
 
 export class BaseAdapter {
@@ -23,10 +23,5 @@ export class BaseAdapter {
     const el = field.el && field.el.isConnected ? field.el : getFieldElement(document, field.id);
     if (!el) return false;
     return fillField(el, value, opts);
-  }
-
-  // Re-resolve a label for a descriptor (used when re-scanning).
-  labelFor(el) {
-    return resolveLabel(el);
   }
 }

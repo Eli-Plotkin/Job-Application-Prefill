@@ -51,16 +51,18 @@ describe("Overlay — per-field controls", () => {
     o.render([{ field: { id: "f", label: "Country", tag: "select", type: "select" }, entry: null, status: "unmatched" }]);
     expect(qa(o, '[data-action="fill"]')).toHaveLength(0);
     expect(qa(o, '[data-action="write"]')).toHaveLength(0);
-    expect(q(o, "[data-badge]").textContent).toMatch(/no match/i);
+    expect(q(o, "[data-badge]").textContent).toMatch(/no saved answer/i);
   });
 
-  it("does not flip the badge to Filled when onFillField resolves false", async () => {
+  it("reports a failed fill instead of silently claiming success", async () => {
     const onFillField = vi.fn().mockResolvedValue(false);
     const o = new Overlay({ onFillField }).mount();
     o.render([matched("f1", "Email", "a@b.com")]);
     q(o, '[data-action="fill"]').click();
     await flush();
-    expect(q(o, "[data-badge]").textContent).toMatch(/found matching/i);
+    expect(q(o, "[data-badge]").textContent).not.toMatch(/filled/i);
+    expect(q(o, "[data-badge]").textContent).toMatch(/couldn’t fill/i);
+    expect(q(o, ".banner.error")).toBeTruthy();
   });
 });
 
@@ -142,5 +144,92 @@ describe("Overlay — error handling & lifecycle", () => {
       o.destroy();
       o.destroy();
     }).not.toThrow();
+  });
+});
+
+describe("Overlay — Fill-all reports per-field outcomes", () => {
+  it("marks the fields that took the value and flags the ones that didn't", async () => {
+    const onFillAll = vi.fn().mockResolvedValue({ filled: ["f1"], failed: ["f2"] });
+    const o = new Overlay({ onFillAll }).mount();
+    o.render([matched("f1", "Email", "a@b.com"), matched("f2", "Country", "Narnia")]);
+
+    q(o, '[data-action="fill-all"]').click();
+    await flush();
+
+    const badge = (id) => qa(o, "[data-badge]").find((b) => b.getAttribute("data-badge") === id).textContent;
+    expect(badge("f1")).toMatch(/filled/i);
+    expect(badge("f2")).toMatch(/couldn’t fill/i);
+    // The failure has to be stated, not just implied by a badge the user may not re-read.
+    expect(q(o, ".banner.error").textContent).toMatch(/1 field couldn’t be filled/i);
+  });
+
+  it("says nothing when every field filled cleanly", async () => {
+    const onFillAll = vi.fn().mockResolvedValue({ filled: ["f1"], failed: [] });
+    const o = new Overlay({ onFillAll }).mount();
+    o.render([matched("f1", "Email", "a@b.com")]);
+
+    q(o, '[data-action="fill-all"]').click();
+    await flush();
+
+    expect(q(o, "[data-badge]").textContent).toMatch(/filled/i);
+    expect(q(o, ".banner.error")).toBeNull();
+  });
+
+  it("replaces a previous banner rather than stacking copies", async () => {
+    const onFillAll = vi.fn().mockResolvedValue({ filled: [], failed: ["f1"] });
+    const o = new Overlay({ onFillAll }).mount();
+    o.render([matched("f1", "Email", "a@b.com")]);
+
+    q(o, '[data-action="fill-all"]').click();
+    await flush();
+    q(o, '[data-action="fill-all"]').click();
+    await flush();
+
+    expect(qa(o, ".banner")).toHaveLength(1);
+  });
+});
+
+describe("Overlay — loading state", () => {
+  it("shows skeleton rows so the panel never sits blank during a scan", () => {
+    const o = new Overlay({}).mount();
+    o.renderLoading("Scanning this page…");
+    expect(qa(o, ".skeleton").length).toBeGreaterThan(0);
+    expect(q(o, ".subtitle").textContent).toBe("Scanning this page…");
+    // Close stays reachable while the scan is in flight.
+    expect(q(o, '[data-action="close"]')).toBeTruthy();
+  });
+
+  it("is fully replaced by the results render", () => {
+    const o = new Overlay({}).mount();
+    o.renderLoading();
+    o.render([matched("f1", "Email", "a@b.com")]);
+    expect(qa(o, ".skeleton")).toHaveLength(0);
+    expect(qa(o, "[data-row]")).toHaveLength(1);
+  });
+});
+
+describe("Overlay — empty answer bank", () => {
+  it("blames the empty bank rather than the matcher", () => {
+    const o = new Overlay({}).mount();
+    o.render([unmatched("f1", "Why do you want to work here?")], { emptyBank: true });
+
+    expect(q(o, ".guide-text").textContent).toMatch(/answer bank is empty/i);
+    expect(q(o, "[data-badge]").textContent).toMatch(/no saved answers/i);
+  });
+
+  it("offers a route to the dashboard from the empty-bank guidance", () => {
+    const onOpenDashboard = vi.fn();
+    const o = new Overlay({ onOpenDashboard }).mount();
+    o.render([unmatched("f1", "Why?")], { emptyBank: true });
+
+    q(o, ".guide button").click();
+    expect(onOpenDashboard).toHaveBeenCalled();
+  });
+
+  it("shows no guidance when the bank has entries", () => {
+    const o = new Overlay({}).mount();
+    o.render([unmatched("f1", "Why?")]);
+    expect(q(o, ".guide")).toBeNull();
+    expect(q(o, "[data-badge]").textContent).toMatch(/no saved answer for this/i);
   });
 });

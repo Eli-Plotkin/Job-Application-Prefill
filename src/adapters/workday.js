@@ -4,6 +4,13 @@
 // base path), but dropdowns/multiselects are custom React widgets: a button with
 // aria-haspopup="listbox" that opens a separate listbox of role="option" divs.
 // Filling those means simulating the real interaction, not setting `.value`.
+//
+// KNOWN GAP: combobox descriptors carry no `options`, so the matcher's
+// dropdown gate (which requires the saved answer to map to a real option before
+// filling) does not apply here. Workday renders the listbox only after the
+// button is clicked, so enumerating options at detect time would mean opening
+// every dropdown on the page. fillWorkdayCombobox compensates at fill time by
+// matching option text and returning false when nothing matches.
 import { BaseAdapter } from "./base.js";
 import { detectFields, resolveLabel, getFieldElement, FIELD_ID_ATTR } from "../dom/field-detector.js";
 import { highlight } from "../dom/field-filler.js";
@@ -43,7 +50,6 @@ export class WorkdayAdapter extends BaseAdapter {
         el,
         tag: el.tagName.toLowerCase(),
         type: "combobox",
-        openEnded: false,
         label: resolveLabel(el),
         autocomplete: "",
         name: el.getAttribute("name") || el.getAttribute("data-automation-id") || "",

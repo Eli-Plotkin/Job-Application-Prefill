@@ -9,6 +9,7 @@
     "test:watch": "vitest",
     "build": "node build.mjs",
     "build:watch": "node build.mjs --watch",
+    "preview": "python3 -m http.server 8080",
     "lint": "eslint src test",
     "eval:matcher": "npm run eval:matcher --prefix evals",
     "eval:view": "npm run view --prefix evals"

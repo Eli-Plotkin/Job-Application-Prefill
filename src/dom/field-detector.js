@@ -139,7 +139,6 @@ export function detectFields(root = document) {
       el,
       tag,
       type,
-      openEnded: tag === "textarea",
       label: resolveLabel(el),
       autocomplete: collapse(el.getAttribute("autocomplete") || ""),
       name: el.getAttribute("name") || "",

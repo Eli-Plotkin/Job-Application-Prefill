@@ -98,11 +98,6 @@ describe("detectFields — exclusions and metadata", () => {
     for (const f of fields) expect(getFieldElement(document, f.id)).toBe(f.el);
   });
 
-  it("flags openEnded only for textareas", () => {
-    document.body.innerHTML = `<input id="a"><textarea id="b"></textarea><select id="c" name="c"><option>x</option></select>`;
-    const open = Object.fromEntries(detectFields(document).map((f) => [f.el.id, f.openEnded]));
-    expect(open).toEqual({ a: false, b: true, c: false });
-  });
 });
 
 describe("isFreeText — narrowed to genuine prose fields", () => {

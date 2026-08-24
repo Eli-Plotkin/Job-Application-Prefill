@@ -39,8 +39,8 @@ describe("Overlay", () => {
     expect(rows).toHaveLength(3);
 
     const badges = Array.from(q(overlay, "[data-badge]")).map((b) => b.textContent);
-    expect(badges[0]).toMatch(/found/i);
-    expect(badges[1]).toMatch(/no match/i);
+    expect(badges[0]).toMatch(/ready to fill/i);
+    expect(badges[1]).toMatch(/no saved answer/i);
   });
 
   it("shows a Fill button only for matched fields", () => {

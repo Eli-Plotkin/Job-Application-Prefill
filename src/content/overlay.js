@@ -117,7 +117,22 @@ button.btn:disabled { opacity: .55; cursor: default; transform: none; box-shadow
 .guidance textarea:focus { outline: none; border-color: var(--silver); box-shadow: 0 0 0 3px var(--accent-soft); }
 
 .empty { padding: 22px 16px; font-size: 13px; color: var(--muted); text-align: center; font-style: italic; }
-.error { color: var(--no); background: var(--no-soft); font-size: 12px; padding: 10px 14px; line-height: 1.4; }
+
+.banner { font-size: 12px; padding: 10px 14px; line-height: 1.4; }
+.banner.error { color: var(--no); background: var(--no-soft); }
+.banner.notice { color: var(--ink); background: var(--accent-soft); }
+
+/* Loading skeleton — stands in for the rows that are about to appear, so the
+   panel reads as working rather than hung while Stage 2 is in flight. */
+.skeleton { padding: 13px 11px; animation: aa-pulse 1.4s ease-in-out infinite; }
+.skeleton .bar { height: 10px; border-radius: 5px; background: var(--line); }
+.skeleton .bar + .bar { margin-top: 9px; width: 58%; background: var(--line-soft); }
+@keyframes aa-pulse { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+
+/* Empty-answer-bank guidance, shown above the rows. */
+.guide { padding: 12px; margin: 4px 2px 8px; border-radius: 10px; background: var(--accent-soft); border: 1px solid var(--line); }
+.guide-text { font-size: 12.5px; line-height: 1.45; margin-bottom: 9px; }
 `;
 
 function el(doc, tag, props = {}, children = []) {
@@ -139,6 +154,10 @@ export class Overlay {
     this.host = null;
     this.shadow = null;
     this.results = [];
+    this.emptyBank = false;
+    // fieldId -> { badge, fill }, so post-fill repainting never has to build a
+    // selector out of a field id.
+    this.rowRefs = new Map();
   }
 
   mount(root = this.doc.body) {
@@ -164,30 +183,68 @@ export class Overlay {
     return this.results.filter((r) => r.status === "matched").length;
   }
 
-  render(results) {
+  render(results, { emptyBank = false } = {}) {
     this.results = results;
+    this.emptyBank = emptyBank;
+    this.rowRefs.clear();
     this.container.textContent = "";
     this.container.appendChild(this._header());
     this.container.appendChild(this._list());
   }
 
-  showError(message) {
-    const err = el(this.doc, "div", { class: "error", text: message });
-    this.container.appendChild(err);
+  // Shown immediately on activation so the panel is never a blank rectangle
+  // while Stage 2 is in flight — that read as a hang.
+  renderLoading(message = "Scanning this page…") {
+    const doc = this.doc;
+    this.container.textContent = "";
+    this.container.appendChild(
+      el(doc, "div", { class: "header" }, [this._brand(), el(doc, "div", { class: "subtitle", text: message })]),
+    );
+    const list = el(doc, "div", { class: "list" });
+    for (let i = 0; i < 3; i++) {
+      list.appendChild(
+        el(doc, "div", { class: "skeleton" }, [
+          el(doc, "div", { class: "bar" }),
+          el(doc, "div", { class: "bar" }),
+        ]),
+      );
+    }
+    this.container.appendChild(list);
   }
 
-  _header() {
+  // Replaces any previous banner rather than stacking — repeated failures on the
+  // same panel should not pile up copies of the message.
+  showError(message) {
+    this._banner(message, "error");
+  }
+
+  showNotice(message) {
+    this._banner(message, "notice");
+  }
+
+  _banner(message, kind) {
+    const existing = this.container.querySelector(".banner");
+    if (existing) existing.remove();
+    this.container.appendChild(el(this.doc, "div", { class: `banner ${kind}`, text: message }));
+  }
+
+  _brand() {
     const doc = this.doc;
     const x = el(doc, "button", { class: "x", text: "×", title: "Close", "data-action": "close" });
     x.addEventListener("click", () => {
       if (this.cb.onClose) this.cb.onClose();
       this.destroy();
     });
-    const brand = el(doc, "div", { class: "brand" }, [
+    return el(doc, "div", { class: "brand" }, [
       el(doc, "span", { class: "glyph", text: "A" }),
       el(doc, "span", { class: "name", text: "Apply Assistant" }),
       x,
     ]);
+  }
+
+  _header() {
+    const doc = this.doc;
+    const brand = this._brand();
 
     const matched = this.matchedCount();
     const subtitle = el(doc, "div", {
@@ -201,7 +258,12 @@ export class Overlay {
       text: `Fill all matched (${matched})`,
     });
     fillAll.disabled = matched === 0;
-    fillAll.addEventListener("click", () => this._run(fillAll, () => this.cb.onFillAll && this.cb.onFillAll()));
+    fillAll.addEventListener("click", () =>
+      this._run(fillAll, async () => {
+        const outcome = await (this.cb.onFillAll && this.cb.onFillAll());
+        if (outcome) this._applyFillOutcomes(outcome);
+      }),
+    );
 
     const rescan = el(doc, "button", { class: "btn ghost", "data-action": "rescan", text: "Re-scan" });
     rescan.addEventListener("click", () => this.cb.onRescan && this.cb.onRescan());
@@ -221,8 +283,46 @@ export class Overlay {
       ]);
     }
     const list = el(doc, "div", { class: "list" });
+    // Without this, an empty bank renders as a wall of "no match" badges, which
+    // blames the matcher for what is really "you haven't saved any answers yet".
+    if (this.emptyBank) {
+      const cta = el(doc, "button", { class: "btn small", text: "Open dashboard" });
+      cta.addEventListener("click", () => this.cb.onOpenDashboard && this.cb.onOpenDashboard());
+      list.appendChild(
+        el(doc, "div", { class: "guide" }, [
+          el(doc, "div", {
+            class: "guide-text",
+            text: "Your answer bank is empty, so nothing can be matched yet. Add answers in the dashboard, then Re-scan.",
+          }),
+          el(doc, "div", { class: "btns" }, [cta]),
+        ]),
+      );
+    }
     for (const r of this.results) list.appendChild(this._row(r));
     return list;
+  }
+
+  // Repaint each row from what actually happened during "Fill all matched".
+  // Fills can fail per-field (e.g. a dropdown with no option matching the saved
+  // answer), and silently leaving every badge untouched hid that entirely.
+  _applyFillOutcomes({ filled = [], failed = [] } = {}) {
+    for (const id of filled) this._setRowOutcome(id, "filled", "Filled", "Filled ✓");
+    for (const id of failed) this._setRowOutcome(id, "unmatched", "Couldn’t fill", "Retry");
+    if (failed.length > 0) {
+      this.showError(
+        `${failed.length} field${failed.length === 1 ? "" : "s"} couldn’t be filled — the saved answer didn’t match any available option.`,
+      );
+    }
+  }
+
+  _setRowOutcome(fieldId, badgeClass, badgeText, buttonText) {
+    const refs = this.rowRefs.get(fieldId);
+    if (!refs) return;
+    if (refs.badge) {
+      refs.badge.className = `badge ${badgeClass}`;
+      refs.badge.textContent = badgeText;
+    }
+    if (refs.fill) refs.fill.textContent = buttonText;
   }
 
   _row(result) {
@@ -236,9 +336,10 @@ export class Overlay {
     const badge = el(doc, "span", {
       class: `badge ${matched ? "matched" : "unmatched"}`,
       "data-badge": fieldId,
-      text: matched ? "Found matching question" : "No matching question",
+      text: matched ? "Ready to fill" : this.emptyBank ? "No saved answers" : "No saved answer for this",
     });
     row.appendChild(el(doc, "div", { class: "meta" }, [badge]));
+    this.rowRefs.set(fieldId, { badge, fill: null });
 
     if (matched && result.entry) {
       const ans = el(doc, "div", { class: "answer" }, [
@@ -251,10 +352,14 @@ export class Overlay {
     const btns = el(doc, "div", { class: "btns" });
     if (matched) {
       const fill = el(doc, "button", { class: "btn small", "data-action": "fill", "data-field": fieldId, text: "Fill" });
+      this.rowRefs.set(fieldId, { badge, fill });
       fill.addEventListener("click", () =>
         this._run(fill, async () => {
           const ok = await (this.cb.onFillField && this.cb.onFillField(fieldId));
-          if (ok !== false) this._markFilled(fieldId, badge, fill);
+          // A false return is a real outcome, not a no-op: the field was matched
+          // but nothing on the page accepted the value.
+          if (ok === false) this._applyFillOutcomes({ failed: [fieldId] });
+          else this._markFilled(fieldId, badge, fill);
         }),
       );
       btns.appendChild(fill);
@@ -321,9 +426,8 @@ export class Overlay {
 
   // Run an async callback with a busy state on the triggering button.
   async _run(btn, fn) {
-    const prev = btn.textContent;
-    btn.disabled = true;
     const original = btn.textContent;
+    btn.disabled = true;
     btn.textContent = "…";
     try {
       await fn();
@@ -331,12 +435,13 @@ export class Overlay {
       btn.textContent = "Error";
       this.showError(String((e && e.message) || e));
       setTimeout(() => {
-        btn.textContent = prev;
+        btn.textContent = original;
         btn.disabled = false;
       }, 1500);
       return;
     }
     btn.disabled = false;
+    // A callback that relabelled the button (e.g. "Filled ✓") keeps its label.
     if (btn.textContent === "…") btn.textContent = original;
   }
 }

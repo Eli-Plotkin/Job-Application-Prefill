@@ -61,7 +61,7 @@ describe("detectFields", () => {
       label: "Email",
       tag: "input",
     });
-    expect(byName.why).toMatchObject({ tag: "textarea", openEnded: true, label: "Why do you want to work here?" });
+    expect(byName.why).toMatchObject({ tag: "textarea", label: "Why do you want to work here?" });
     expect(byName.country).toMatchObject({ tag: "select", type: "select" });
   });
 
