@@ -15,6 +15,7 @@ const flush = () => new Promise((r) => setTimeout(r));
 
 let messageListener;
 let actionListener;
+let tabsUpdatedListener;
 let getMock;
 let openOptionsPage;
 
@@ -23,16 +24,26 @@ function setupChrome(storageGet) {
   openOptionsPage = vi.fn();
   messageListener = null;
   actionListener = null;
+  tabsUpdatedListener = null;
   globalThis.chrome = {
     runtime: {
       onMessage: { addListener: (fn) => (messageListener = fn) },
       openOptionsPage,
     },
-    action: { onClicked: { addListener: (fn) => (actionListener = fn) } },
+    action: {
+      onClicked: { addListener: (fn) => (actionListener = fn) },
+      setBadgeText: vi.fn().mockResolvedValue(undefined),
+      setBadgeBackgroundColor: vi.fn().mockResolvedValue(undefined),
+      setTitle: vi.fn().mockResolvedValue(undefined),
+    },
+    tabs: { onUpdated: { addListener: (fn) => (tabsUpdatedListener = fn) } },
     scripting: { executeScript: vi.fn() },
     storage: { local: { get: getMock, set: vi.fn().mockResolvedValue(undefined) } },
   };
 }
+
+// Title text the most recent setTitle call wrote, for assertion convenience.
+const lastTitle = () => chrome.action.setTitle.mock.calls.at(-1)[0].title;
 
 async function loadBackground(storageGet) {
   vi.resetModules();
@@ -155,5 +166,74 @@ describe("background AA_COMPLETE broker", () => {
     await loadBackground(async () => ({}));
     await actionListener({});
     expect(chrome.scripting.executeScript).not.toHaveBeenCalled();
+  });
+});
+
+describe("toolbar activation feedback", () => {
+  beforeEach(() => {
+    chrome?.action?.setBadgeText?.mockClear?.();
+  });
+
+  it("clears any stale badge after a successful injection", async () => {
+    await loadBackground(async () => ({}));
+    chrome.scripting.executeScript.mockResolvedValue([]);
+    await actionListener({ id: 7 });
+    expect(chrome.action.setBadgeText).toHaveBeenCalledWith({ tabId: 7, text: "" });
+    expect(lastTitle()).toBe("Activate Apply Assistant on this page");
+  });
+
+  it("badges the tab instead of failing silently when injection is refused", async () => {
+    await loadBackground(async () => ({}));
+    chrome.scripting.executeScript.mockRejectedValue(new Error("Cannot access contents of the page."));
+    await actionListener({ id: 7 });
+
+    expect(chrome.action.setBadgeText).toHaveBeenCalledWith({ tabId: 7, text: "!" });
+    expect(chrome.action.setBadgeBackgroundColor).toHaveBeenCalledWith({ tabId: 7, color: "#B91C1C" });
+    expect(lastTitle()).toMatch(/can’t run on this page/);
+  });
+
+  it("names browser pages specifically, from the URL or the thrown error", async () => {
+    await loadBackground(async () => ({}));
+    chrome.scripting.executeScript.mockRejectedValue(new Error("Cannot access a chrome:// URL"));
+    await actionListener({ id: 7 }); // no tab.url — activeTab was never granted
+    expect(lastTitle()).toMatch(/browser pages/);
+
+    await actionListener({ id: 7, url: "chrome://settings" });
+    expect(lastTitle()).toMatch(/browser pages/);
+  });
+
+  it("names the Web Store specifically", async () => {
+    await loadBackground(async () => ({}));
+    chrome.scripting.executeScript.mockRejectedValue(new Error("The extensions gallery cannot be scripted."));
+    await actionListener({ id: 7, url: "https://chromewebstore.google.com/detail/x" });
+    expect(lastTitle()).toMatch(/Web Store/);
+  });
+
+  it("tells the user how to enable file:// access", async () => {
+    await loadBackground(async () => ({}));
+    chrome.scripting.executeScript.mockRejectedValue(new Error("Cannot access contents of the page."));
+    await actionListener({ id: 7, url: "file:///Users/x/form.html" });
+    expect(lastTitle()).toMatch(/Allow access to file URLs/);
+  });
+
+  it("clears the badge once the tab navigates, since the verdict is now stale", async () => {
+    await loadBackground(async () => ({}));
+    expect(typeof tabsUpdatedListener).toBe("function");
+
+    tabsUpdatedListener(7, { status: "loading" });
+    await flush();
+    expect(chrome.action.setBadgeText).toHaveBeenCalledWith({ tabId: 7, text: "" });
+
+    chrome.action.setBadgeText.mockClear();
+    tabsUpdatedListener(7, { status: "complete" }); // not a fresh navigation
+    await flush();
+    expect(chrome.action.setBadgeText).not.toHaveBeenCalled();
+  });
+
+  it("survives the tab being closed mid-click", async () => {
+    await loadBackground(async () => ({}));
+    chrome.scripting.executeScript.mockRejectedValue(new Error("No tab with id: 7."));
+    chrome.action.setBadgeText.mockRejectedValue(new Error("No tab with id: 7."));
+    await expect(actionListener({ id: 7 })).resolves.toBeUndefined();
   });
 });

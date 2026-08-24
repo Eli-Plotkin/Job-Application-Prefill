@@ -59,6 +59,60 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   return false;
 });
 
+// ---- Toolbar activation ----------------------------------------------------
+
+const DEFAULT_TITLE = "Activate Apply Assistant on this page";
+
+// Chrome refuses content-script injection on browser-internal pages, the Web
+// Store, and file:// URLs without an explicit opt-in. Injection is attempted
+// first and the failure classified afterwards, because on exactly those pages
+// `activeTab` is never granted — so `tab.url` is usually withheld from us and
+// the thrown error is the only reliable signal.
+// Ordered most-specific first. Only strong signals are used: a matching URL, or
+// an error string Chrome emits for exactly one cause. The generic host-permission
+// message ("Extension manifest must request permission…") is deliberately NOT
+// treated as a browser-page marker — it accompanies several unrelated refusals.
+function unavailableReason(tab, err) {
+  const url = String((tab && tab.url) || "");
+  const msg = String((err && err.message) || err || "");
+  const openOne = "Open a job application and try again.";
+
+  if (/chromewebstore\.google\.com|chrome\.google\.com\/webstore/i.test(url) ||
+      /gallery cannot be scripted/i.test(msg)) {
+    return `Chrome blocks extensions on the Web Store. ${openOne}`;
+  }
+  if (/^file:\/\//i.test(url)) {
+    return "Turn on “Allow access to file URLs” in this extension’s details to use it on local files.";
+  }
+  if (/^(chrome|edge|brave|about|devtools|view-source|chrome-extension):/i.test(url) ||
+      /chrome:\/\//i.test(msg)) {
+    return `Chrome blocks extensions on browser pages. ${openOne}`;
+  }
+  return `Apply Assistant can’t run on this page. ${openOne}`;
+}
+
+// Badge + tooltip are the only channels available when injection fails: we
+// cannot render in-page UI on a page we were just refused access to. Both are
+// scoped to the tab so one bad page never mislabels the others.
+async function showUnavailable(tabId, reason) {
+  try {
+    await chrome.action.setBadgeText({ tabId, text: "!" });
+    await chrome.action.setBadgeBackgroundColor({ tabId, color: "#B91C1C" });
+    await chrome.action.setTitle({ tabId, title: `Apply Assistant — ${reason}` });
+  } catch {
+    // Tab closed between the click and the badge write — nothing to report to.
+  }
+}
+
+async function clearUnavailable(tabId) {
+  try {
+    await chrome.action.setBadgeText({ tabId, text: "" });
+    await chrome.action.setTitle({ tabId, title: DEFAULT_TITLE });
+  } catch {
+    // Tab is gone; its per-tab badge state went with it.
+  }
+}
+
 // Toolbar click → inject the content script on demand and activate it. Injecting
 // only on click is what makes the extension inert until the user asks for it.
 chrome.action.onClicked.addListener(async (tab) => {
@@ -68,8 +122,13 @@ chrome.action.onClicked.addListener(async (tab) => {
       target: { tabId: tab.id },
       files: ["content-script.js"],
     });
+    await clearUnavailable(tab.id);
   } catch (e) {
-    // Some pages (chrome://, the Web Store) disallow injection — nothing to do.
-    console.warn("Apply Assistant: cannot run on this page.", e);
+    await showUnavailable(tab.id, unavailableReason(tab, e));
   }
+});
+
+// A navigation makes any previous "can't run here" verdict stale.
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo && changeInfo.status === "loading") clearUnavailable(tabId);
 });
