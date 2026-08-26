@@ -1,5 +1,5 @@
 # Apply Assistant
-![tests](https://github.com/Eli-Plotkin/Job-Application Prefill/actions/workflows/test.yml/badge.svg)
+[![tests](https://github.com/Eli-Plotkin/Job-Application-Prefill/actions/workflows/test.yml/badge.svg)](https://github.com/Eli-Plotkin/Job-Application-Prefill/actions/workflows/test.yml)
 
 A Manifest V3 Chrome extension that fills job-application forms (Workday-first)
 from a saved profile, with per-question AI drafting for open-ended questions. You
