@@ -6,6 +6,7 @@
 // injected callbacks (onFillAll, onFillField, onWrite, onRescan, onClose,
 // onOpenDashboard). It only manages presentation and busy state.
 import { isFreeText } from "../dom/field-detector.js";
+import { humanError } from "../lib/errors.js";
 
 // Local brand fonts, loaded from the extension's own packaged files (declared as
 // web_accessible_resources). Skipped silently where chrome.runtime is absent
@@ -433,7 +434,7 @@ export class Overlay {
       await fn();
     } catch (e) {
       btn.textContent = "Error";
-      this.showError(String((e && e.message) || e));
+      this.showError(humanError(e));
       setTimeout(() => {
         btn.textContent = original;
         btn.disabled = false;

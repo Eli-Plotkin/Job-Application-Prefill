@@ -384,6 +384,34 @@ textarea { resize: vertical; min-height: 120px; line-height: 1.55; }
   min-height: 16px;
 }
 
+/* ---- Warning box (e.g. plaintext key in an export) ---- */
+.warn-box {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  color: var(--no);
+  background: var(--no-soft);
+  border: 1px solid var(--no);
+  border-radius: var(--radius-sm);
+  padding: 11px 13px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  margin: -4px 0 16px;
+}
+.warn-box::before {
+  content: "!";
+  flex: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--no);
+  color: #fff;
+  font-weight: 700;
+  font-size: 11px;
+  display: grid;
+  place-items: center;
+  margin-top: 1px;
+}
+
 /* ---- Spend display ---- */
 .spend-val {
   font-family: var(--mono);

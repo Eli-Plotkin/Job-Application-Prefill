@@ -7,6 +7,7 @@ import { unhighlightAll } from "../dom/field-filler.js";
 import { runMatching } from "../lib/engine.js";
 import { buildDraftPrompt, buildRewritePrompt } from "../lib/drafter.js";
 import { getAnswerBank, getResume, getBlurb, getSettings } from "../lib/storage.js";
+import { humanError } from "../lib/errors.js";
 import { Overlay } from "./overlay.js";
 
 function completeViaBackground(prompt, model, maxTokens) {
@@ -21,12 +22,6 @@ function completeViaBackground(prompt, model, maxTokens) {
       },
     );
   });
-}
-
-function humanError(e) {
-  const msg = String((e && e.message) || e);
-  if (/api key/i.test(msg)) return msg + " Open the Apply Assistant dashboard to add it.";
-  return msg;
 }
 
 function createController() {

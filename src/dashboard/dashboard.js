@@ -16,6 +16,7 @@ import {
 } from "../lib/storage.js";
 import { parseResumeFile } from "./resume-parser.js";
 import { resumeBackends } from "./resume-backends.js";
+import { humanError } from "../lib/errors.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -74,7 +75,7 @@ async function onResumeFile(e) {
     await renderResume();
     toast("Resume saved.");
   } catch (err) {
-    toast(String(err.message || err), true);
+    toast(humanError(err), true);
   } finally {
     e.target.value = "";
   }
@@ -215,6 +216,16 @@ async function renderSpend() {
 
 // ---- Backup ----------------------------------------------------------------
 async function onExport() {
+  const settings = await getSettings();
+  if (
+    settings.apiKey &&
+    !window.confirm(
+      "This file will contain your Anthropic API key in plain text. " +
+        "Keep it somewhere private and never share it — continue?",
+    )
+  ) {
+    return;
+  }
   const payload = await exportAll();
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -230,12 +241,17 @@ async function onImport(e) {
   const file = e.target.files && e.target.files[0];
   if (!file) return;
   try {
-    const payload = JSON.parse(await file.text());
+    let payload;
+    try {
+      payload = JSON.parse(await file.text());
+    } catch {
+      throw new Error("That file isn't valid JSON — pick the backup file exported from this dashboard.");
+    }
     await importAll(payload);
     await reloadAll();
     toast("Imported.");
   } catch (err) {
-    toast("Import failed: " + String(err.message || err), true);
+    toast("Import failed: " + humanError(err), true);
   } finally {
     e.target.value = "";
   }

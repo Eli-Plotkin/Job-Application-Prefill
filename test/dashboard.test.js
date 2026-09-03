@@ -197,16 +197,43 @@ describe("dashboard — setup walkthrough", () => {
 });
 
 describe("dashboard — export", () => {
-  it("builds a downloadable JSON blob", async () => {
+  it("builds a downloadable JSON blob when there's no API key to warn about", async () => {
     // jsdom can't navigate; stub the download anchor's click.
     const clickStub = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    const confirmStub = vi.spyOn(window, "confirm").mockImplementation(() => true);
     await setBlurb("x");
     await loadDashboard();
     $("export").click();
     await flush();
     clickStub.mockRestore();
+    confirmStub.mockRestore();
     expect(globalThis.URL.createObjectURL).toHaveBeenCalled();
     const blob = globalThis.URL.createObjectURL.mock.calls[0][0];
     expect(blob).toBeInstanceOf(Blob);
+  });
+
+  it("warns before exporting a saved API key, and proceeds if confirmed", async () => {
+    const clickStub = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    const confirmStub = vi.spyOn(window, "confirm").mockImplementation(() => true);
+    await setSettings({ apiKey: "sk-secret" });
+    await loadDashboard();
+    $("export").click();
+    await flush();
+    expect(confirmStub).toHaveBeenCalledWith(expect.stringMatching(/plain text/));
+    expect(globalThis.URL.createObjectURL).toHaveBeenCalled();
+    clickStub.mockRestore();
+    confirmStub.mockRestore();
+  });
+
+  it("skips the export if the user cancels the API-key warning", async () => {
+    const clickStub = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    const confirmStub = vi.spyOn(window, "confirm").mockImplementation(() => false);
+    await setSettings({ apiKey: "sk-secret" });
+    await loadDashboard();
+    $("export").click();
+    await flush();
+    clickStub.mockRestore();
+    confirmStub.mockRestore();
+    expect(globalThis.URL.createObjectURL).not.toHaveBeenCalled();
   });
 });

@@ -325,7 +325,7 @@ describe("error surfaces", () => {
     const o = await activateFresh();
 
     expect(o.render).toHaveBeenCalledWith([]);
-    expect(o.showError).toHaveBeenCalledWith(expect.stringMatching(/429 rate limited/));
+    expect(o.showError).toHaveBeenCalledWith(expect.stringMatching(/rate-limiting/));
   });
 
   it("points at the dashboard when the failure is a missing API key", async () => {
@@ -359,7 +359,7 @@ describe("error surfaces", () => {
 
     const o = await activateFresh();
 
-    expect(o.showError).toHaveBeenCalledWith(expect.stringMatching(/No response from the background worker/));
+    expect(o.showError).toHaveBeenCalledWith(expect.stringMatching(/Lost connection to the extension/));
   });
 });
 
