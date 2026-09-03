@@ -12,6 +12,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
   matchConfidenceThreshold: 0.6,
   // Visually highlight filled fields so the user can scan-review (§11.1).
   highlightFilled: true,
+  // Has the dashboard's first-run walkthrough been completed or skipped?
+  onboardingComplete: false,
 });
 
 // chrome.storage.local keys.

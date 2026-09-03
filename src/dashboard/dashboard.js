@@ -241,11 +241,146 @@ async function onImport(e) {
   }
 }
 
+// ---- Setup walkthrough -------------------------------------------------------
+// A first-run, step-by-step tour aimed at non-technical users: it spotlights
+// each card in turn (via .tour-spotlight) rather than duplicating the real
+// inputs, so there's one source of truth for the data and nothing to keep in
+// sync between a wizard and the dashboard underneath it.
+const TOUR_STEPS = [
+  {
+    title: "Welcome to Apply Assistant",
+    body: `<p>This walks you through a one-time setup. It takes about two minutes.</p>
+           <p>Nothing you enter ever leaves this device, except the specific text you
+           ask the AI to help write — and nothing is ever submitted on your behalf.
+           You always review and click submit yourself.</p>`,
+  },
+  {
+    title: "Add your resume",
+    body: `<p>Upload a PDF, DOCX, or plain-text resume. It's converted to text and used
+           as context whenever you ask the AI to draft an answer — it's never sent
+           anywhere except to Anthropic, and only when you click <strong>Write with
+           AI</strong>.</p>`,
+    highlight: "card-resume",
+  },
+  {
+    title: "Write a short “about me”",
+    body: `<p>A few sentences in your own words — what you do, what you're looking
+           for. This gets passed alongside your resume to every AI-written answer, so
+           drafts sound like you instead of a generic template.</p>`,
+    highlight: "card-blurb",
+    focus: "blurb",
+  },
+  {
+    title: "Build your answer bank",
+    body: `<p>These are the questions applications ask over and over — work
+           authorization, relocation, how you heard about the role — paired with the
+           answer you want used every time.</p>
+           <p>Click <strong>Starter examples</strong> to load a template you can edit,
+           or add your own rows.</p>`,
+    highlight: "card-answers",
+  },
+  {
+    title: "Connect an Anthropic API key",
+    body: `<p>This is what powers AI matching and drafting. Without it, only basic
+           fields (name, email, phone, links) fill automatically.</p>
+           <p>To get one: open
+           <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">
+           console.anthropic.com/settings/keys</a>, sign in or create an account, then
+           click <strong>Create Key</strong> and copy it here. Cost is small — a
+           fraction of a cent per application — and this page tracks your spend below.</p>
+           <p>You can skip this for now and add it later — everything else still
+           works.</p>`,
+    highlight: "card-api",
+    focus: "api-key",
+  },
+  {
+    title: "You're set up",
+    body: `<p>Open a job application in a new tab and click the toolbar icon. Apply
+           Assistant scans the page and shows what it can fill — nothing is filled
+           until you click <strong>Fill all matched</strong>, or fill fields one at a
+           time.</p>
+           <p>For open-ended questions, use <strong>Write with AI</strong> to draft an
+           answer, then ask for a rewrite with guidance until it sounds right.</p>
+           <p>You can revisit this walkthrough any time from the link under the
+           title.</p>`,
+  },
+];
+
+let tourStep = 0;
+
+function clearSpotlight() {
+  document.querySelectorAll(".tour-spotlight").forEach((el) => el.classList.remove("tour-spotlight"));
+}
+
+function renderTourStep() {
+  const step = TOUR_STEPS[tourStep];
+  clearSpotlight();
+
+  $("tour-title").textContent = step.title;
+  $("tour-body").innerHTML = step.body;
+
+  const dots = $("tour-dots");
+  dots.textContent = "";
+  TOUR_STEPS.forEach((_, i) => {
+    const dot = document.createElement("span");
+    if (i === tourStep) dot.className = "on";
+    dots.appendChild(dot);
+  });
+
+  $("tour-back").hidden = tourStep === 0;
+  $("tour-next").textContent = tourStep === TOUR_STEPS.length - 1 ? "Done" : "Next";
+
+  if (step.highlight) {
+    const el = $(step.highlight);
+    if (el) {
+      el.classList.add("tour-spotlight");
+      el.scrollIntoView?.({ behavior: "smooth", block: "center" });
+    }
+  } else {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  if (step.focus) {
+    const input = $(step.focus);
+    if (input) setTimeout(() => input.focus(), 350);
+  }
+}
+
+async function endTour() {
+  clearSpotlight();
+  $("tour").hidden = true;
+  await setSettings({ onboardingComplete: true });
+}
+
+function startTour() {
+  tourStep = 0;
+  $("tour").hidden = false;
+  renderTourStep();
+}
+
+function wireTour() {
+  $("tour-next").addEventListener("click", () => {
+    if (tourStep === TOUR_STEPS.length - 1) {
+      endTour();
+      return;
+    }
+    tourStep += 1;
+    renderTourStep();
+  });
+  $("tour-back").addEventListener("click", () => {
+    tourStep = Math.max(0, tourStep - 1);
+    renderTourStep();
+  });
+  $("tour-skip").addEventListener("click", endTour);
+  $("restart-tour").addEventListener("click", startTour);
+}
+
 // ---- Init ------------------------------------------------------------------
 async function reloadAll() {
   answerBank = await getAnswerBank();
   await Promise.all([renderResume(), renderBlurb(), renderSettings(), renderSpend()]);
   renderAnswerBank();
+  const settings = await getSettings();
+  if (!settings.onboardingComplete) startTour();
 }
 
 function wire() {
@@ -260,6 +395,7 @@ function wire() {
   }
   $("export").addEventListener("click", onExport);
   $("import-file").addEventListener("change", onImport);
+  wireTour();
 }
 
 wire();

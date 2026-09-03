@@ -18,9 +18,10 @@
           Fill job applications faster from one saved profile. Everything stays on this device — nothing
           leaves except the answers you ask AI to write.
         </p>
+        <button id="restart-tour" class="link-btn" type="button">Redo setup walkthrough</button>
       </header>
 
-      <section class="card">
+      <section class="card" id="card-resume">
         <div class="card-head"><span class="num">01</span><h2>Resume</h2></div>
         <p class="hint">Uploaded once and parsed to plain text for use as AI context.</p>
         <div id="resume-status" class="resume-status">No resume uploaded.</div>
@@ -37,14 +38,14 @@
         </details>
       </section>
 
-      <section class="card">
+      <section class="card" id="card-blurb">
         <div class="card-head"><span class="num">02</span><h2>About me</h2></div>
         <p class="hint">Your voice and positioning, in your own words. Passed to every "Write with AI" call.</p>
         <textarea id="blurb" rows="6" placeholder="e.g. I'm a systems engineer focused on hard real-time problems…"></textarea>
         <div class="row end"><span class="saved" id="blurb-saved"></span></div>
       </section>
 
-      <section class="card">
+      <section class="card" id="card-answers">
         <div class="card-head">
           <span class="num">03</span><h2>Answer bank</h2>
           <span class="spacer"></span>
@@ -59,7 +60,7 @@
         <p id="answer-empty" class="empty">No saved answers yet. Add some, or load the starter examples.</p>
       </section>
 
-      <section class="card">
+      <section class="card" id="card-api">
         <div class="card-head"><span class="num">04</span><h2>API &amp; models</h2></div>
         <p class="hint">Your own Anthropic API key, stored locally. Never hardcoded, never sent anywhere except the Anthropic API.</p>
         <label class="field">
@@ -113,6 +114,21 @@
     </main>
 
     <div id="toast" class="toast" hidden></div>
+
+    <div id="tour" class="tour" hidden>
+      <div class="tour-backdrop"></div>
+      <div class="tour-card" role="dialog" aria-modal="true" aria-labelledby="tour-title">
+        <div class="tour-dots" id="tour-dots"></div>
+        <h3 id="tour-title" class="tour-title"></h3>
+        <div id="tour-body" class="tour-body"></div>
+        <div class="tour-actions">
+          <button id="tour-skip" class="link-btn" type="button">Skip setup</button>
+          <span class="spacer"></span>
+          <button id="tour-back" class="btn ghost" type="button">Back</button>
+          <button id="tour-next" class="btn" type="button">Next</button>
+        </div>
+      </div>
+    </div>
 
     <!-- mammoth prebuilt browser bundle (exposes window.mammoth) for DOCX parsing -->
     <script src="vendor/mammoth.browser.min.js"></script>

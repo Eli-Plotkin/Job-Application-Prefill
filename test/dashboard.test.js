@@ -147,6 +147,55 @@ describe("dashboard — settings clamping", () => {
   });
 });
 
+describe("dashboard — setup walkthrough", () => {
+  it("auto-starts for a first-run user on the welcome step", async () => {
+    await loadDashboard();
+    expect($("tour").hidden).toBe(false);
+    expect($("tour-back").hidden).toBe(true);
+  });
+
+  it("does not auto-start once onboarding is already complete", async () => {
+    await setSettings({ onboardingComplete: true });
+    await loadDashboard();
+    expect($("tour").hidden).toBe(true);
+  });
+
+  it("advances through steps and moves the spotlight, then persists on Done", async () => {
+    await loadDashboard();
+    $("tour-next").click(); // -> resume
+    expect($("card-resume").classList.contains("tour-spotlight")).toBe(true);
+    $("tour-next").click(); // -> blurb
+    expect($("card-blurb").classList.contains("tour-spotlight")).toBe(true);
+    expect($("card-resume").classList.contains("tour-spotlight")).toBe(false);
+
+    // Walk to the final step and finish.
+    while ($("tour-next").textContent !== "Done") $("tour-next").click();
+    $("tour-next").click();
+    await flush();
+
+    expect($("tour").hidden).toBe(true);
+    expect((await getSettings()).onboardingComplete).toBe(true);
+  });
+
+  it("skip persists onboardingComplete without visiting every step", async () => {
+    await loadDashboard();
+    $("tour-skip").click();
+    await flush();
+    expect($("tour").hidden).toBe(true);
+    expect((await getSettings()).onboardingComplete).toBe(true);
+  });
+
+  it("Redo setup walkthrough restarts the tour from the first step", async () => {
+    await setSettings({ onboardingComplete: true });
+    await loadDashboard();
+    expect($("tour").hidden).toBe(true);
+
+    $("restart-tour").click();
+    expect($("tour").hidden).toBe(false);
+    expect($("tour-back").hidden).toBe(true);
+  });
+});
+
 describe("dashboard — export", () => {
   it("builds a downloadable JSON blob", async () => {
     // jsdom can't navigate; stub the download anchor's click.
